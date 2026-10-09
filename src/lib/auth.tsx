@@ -109,9 +109,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const ADMIN_PASSCODE = 'Allawi@91';
+
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
 
+    // 1. Direct Master Admin Passcode Verification
+    if (password.trim() === ADMIN_PASSCODE) {
+      const masterAdmin: UserProfile = {
+        id: 'admin-master',
+        email: email.trim() || 'admin@iraqifps.org',
+        full_name: 'مدير النظام (IFPS Admin)',
+        role: 'admin',
+        created_at: new Date().toISOString(),
+      };
+      setUser(masterAdmin);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(masterAdmin));
+      setIsLoading(false);
+      return { success: true };
+    }
+
+    // 2. Cloud Supabase Authentication (if configured)
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -119,12 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           password,
         });
 
-        if (error) {
-          setIsLoading(false);
-          return { success: false, error: error.message };
-        }
-
-        if (data.user) {
+        if (!error && data?.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
@@ -143,35 +156,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
           return { success: true };
         }
-      } catch (err: any) {
-        setIsLoading(false);
-        return { success: false, error: err.message || 'حدث خطأ أثناء تسجيل الدخول' };
-      }
-    }
-
-    // Local authentication fallback for instant admin testing
-    // Accepts any admin email with a valid password
-    if (email.toLowerCase().includes('admin') || email.toLowerCase().includes('iraqifps')) {
-      if (password.length >= 6) {
-        const fallbackAdmin: UserProfile = {
-          id: 'admin-local-1',
-          email,
-          full_name: 'المسؤول الإداري (IFPS Admin)',
-          role: 'admin',
-          created_at: new Date().toISOString(),
-        };
-        setUser(fallbackAdmin);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(fallbackAdmin));
-        setIsLoading(false);
-        return { success: true };
-      } else {
-        setIsLoading(false);
-        return { success: false, error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' };
+      } catch {
+        // Fallback to error return
       }
     }
 
     setIsLoading(false);
-    return { success: false, error: 'بيانات الدخول غير صحيحة أو الحساب غير مصرح له كإدارة' };
+    return { success: false, error: 'رمز الدخول غير صحيح، يرجى إدخال الرمز المعتمد للإدارة' };
   };
 
   const logout = async () => {

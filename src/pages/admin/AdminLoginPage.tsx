@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/auth';
 import { SEO } from '../../components/common/SEO';
 
 export const AdminLoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('admin@iraqifps.org');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ export const AdminLoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(email.trim() || 'admin@iraqifps.org', password);
       if (result.success) {
         navigate('/admin/dashboard');
       } else {

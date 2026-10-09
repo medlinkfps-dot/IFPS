@@ -129,13 +129,20 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Credits */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS). جميع الحقوق محفوظة.</p>
+          <p>
+            © {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS). جميع الحقوق{' '}
+            <Link 
+              to="/admin/login" 
+              className="text-inherit hover:text-inherit focus:outline-none cursor-default select-none"
+              tabIndex={-1}
+            >
+              محفوظة
+            </Link>.
+          </p>
           <div className="flex items-center gap-4">
             <Link to="/about" className="hover:text-slate-400">من نحن</Link>
             <span>•</span>
             <Link to="/contact" className="hover:text-slate-400">اتصل بنا</Link>
-            <span>•</span>
-            <Link to="/admin/login" className="text-slate-400 hover:text-medical-400">دخول الإدارة</Link>
           </div>
         </div>
 

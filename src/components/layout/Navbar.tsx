@@ -6,7 +6,6 @@ import {
   ExternalLink, 
   FileDown,
   FileText, 
-  LogIn, 
   LayoutDashboard,
   Home,
   Newspaper,
@@ -220,14 +219,9 @@ export const Navbar: React.FC = () => {
               <a href="mailto:info@iraqifps.org" className="hover:text-navy-900">
                 info@iraqifps.org
               </a>
-              {user ? (
+              {user && (
                 <Link to="/admin/dashboard" className="text-medical-600 font-bold hover:underline">
                   لوحة الإدارة
-                </Link>
-              ) : (
-                <Link to="/admin/login" className="flex items-center gap-1 hover:text-navy-900">
-                  <LogIn className="w-3 h-3" />
-                  <span>دخول الإدارة</span>
                 </Link>
               )}
             </div>
