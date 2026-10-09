@@ -4,6 +4,7 @@ import { getSettings, updateSetting } from '../../lib/db';
 import { SiteSetting } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { ImageUploadField } from '../../components/common/ImageUploadField';
 
 export const AdminSettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
@@ -240,37 +241,27 @@ export const AdminSettingsPage: React.FC = () => {
         </div>
 
         {/* 4. Logos and Assets */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft space-y-4">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft space-y-6">
           <h2 className="text-base font-bold text-navy-900 border-b border-slate-100 pb-3">
-            روابط الشعارات المعتمدة
+            الشعارات والأختام الرسمية المعتمدة
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                رابط الشعار الشفاف (الترويسة)
-              </label>
-              <input
-                type="url"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono text-left"
-                dir="ltr"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <ImageUploadField
+              value={logoUrl}
+              onChange={(url) => setLogoUrl(url)}
+              label="الشعار الشفاف (الترويسة الرئيسية)"
+              description="الشعار الرسمي للجمعية الذي يظهر في شريط التنقل العلوي والفوتر."
+              aspectRatio="square"
+            />
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                رابط الشعار الدائري (الختم الرسمي)
-              </label>
-              <input
-                type="url"
-                value={emblemUrl}
-                onChange={(e) => setEmblemUrl(e.target.value)}
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono text-left"
-                dir="ltr"
-              />
-            </div>
+            <ImageUploadField
+              value={emblemUrl}
+              onChange={(url) => setEmblemUrl(url)}
+              label="الشعار الدائري (الختم الرسمي)"
+              description="الختم الدائري المعتمد المستخدم في الشهادات والوثائق الرسمية."
+              aspectRatio="square"
+            />
           </div>
         </div>
       </form>

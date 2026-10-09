@@ -21,6 +21,7 @@ import { SEO } from '../../components/common/SEO';
 import { VisualEditor } from '../../components/admin/VisualEditor';
 import { PostPreviewModal } from '../../components/admin/PostPreviewModal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { ImageUploadField } from '../../components/common/ImageUploadField';
 
 export const AdminPostEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -528,28 +529,14 @@ export const AdminPostEditorPage: React.FC = () => {
           </div>
 
           {/* Featured Image Picker */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-3">
-            <h3 className="text-sm font-bold text-navy-900 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-medical-600" />
-              <span>الصورة البارزة</span>
-            </h3>
-
-            <div>
-              <input
-                type="url"
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl"
-                dir="ltr"
-              />
-            </div>
-
-            {featuredImage && (
-              <div className="rounded-xl overflow-hidden aspect-video bg-slate-100 border border-slate-200">
-                <img src={featuredImage} alt="معاينة" className="w-full h-full object-cover" />
-              </div>
-            )}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft">
+            <ImageUploadField
+              value={featuredImage}
+              onChange={(url) => setFeaturedImage(url)}
+              label="الصورة البارزة للمنشور"
+              description="اختر صورة من جهازك لتظهر كواجهة رئيسية للمنشور في الموقع، محركات البحث، وشبكات التواصل."
+              aspectRatio="video"
+            />
           </div>
 
           {/* SEO Meta Box */}

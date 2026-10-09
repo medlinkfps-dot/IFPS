@@ -12,6 +12,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { uploadImageFile } from '../../lib/imageUtils';
 import { MediaItem } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { Modal } from '../../components/common/Modal';
@@ -29,6 +30,7 @@ export const AdminMediaPage: React.FC = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<MediaItem | null>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMedia = async () => {
@@ -93,69 +95,86 @@ export const AdminMediaPage: React.FC = () => {
     loadMedia();
   }, []);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const processFiles = async (fileList: FileList | File[]) => {
+    if (!fileList || fileList.length === 0) return;
 
     setUploading(true);
-    const file = files[0];
+    const filesArray = Array.from(fileList);
+    const addedItems: MediaItem[] = [];
 
-    // File validation: Limit size to 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      alert('الحد الأقصى لحجم الملف هو 10 ميغابايت.');
-      setUploading(false);
-      return;
-    }
+    for (const file of filesArray) {
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`الملف ${file.name} أكبر من 20 ميغابايت.`);
+        continue;
+      }
 
-    try {
-      let publicUrl = '';
-      const filePath = `uploads/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      try {
+        let publicUrl = '';
+        const filePath = `uploads/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
 
-      if (isSupabaseConfigured) {
-        // Upload to Supabase Storage bucket 'media'
-        const { error: uploadError } = await supabase.storage
-          .from('media')
-          .upload(filePath, file);
+        if (file.type.startsWith('image/')) {
+          const res = await uploadImageFile(file, 'media');
+          publicUrl = res.url;
+        } else if (isSupabaseConfigured) {
+          const { error: uploadError } = await supabase.storage
+            .from('media')
+            .upload(filePath, file);
 
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('media').getPublicUrl(filePath);
-          publicUrl = urlData.publicUrl;
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from('media').getPublicUrl(filePath);
+            publicUrl = urlData.publicUrl;
+          }
+        }
 
-          // Record in media table
-          await supabase.from('media').insert({
-            file_name: file.name,
-            file_path: filePath,
-            public_url: publicUrl,
-            file_size: file.size,
-            mime_type: file.type,
+        if (!publicUrl) {
+          publicUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
           });
         }
+
+        const newItem: MediaItem = {
+          id: `media-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          file_name: file.name,
+          file_path: filePath,
+          public_url: publicUrl,
+          file_size: file.size,
+          mime_type: file.type || 'image/jpeg',
+          created_at: new Date().toISOString(),
+        };
+
+        if (isSupabaseConfigured) {
+          await supabase.from('media').insert({
+            file_name: newItem.file_name,
+            file_path: newItem.file_path,
+            public_url: newItem.public_url,
+            file_size: newItem.file_size,
+            mime_type: newItem.mime_type,
+          });
+        }
+
+        addedItems.push(newItem);
+      } catch (err) {
+        console.error('Error uploading file:', file.name, err);
       }
+    }
 
-      // If offline or storage direct preview
-      if (!publicUrl) {
-        // Create local object URL for preview
-        publicUrl = URL.createObjectURL(file);
-      }
+    if (addedItems.length > 0) {
+      setMediaList((prev) => {
+        const updated = [...addedItems, ...prev];
+        localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    }
 
-      const newItem: MediaItem = {
-        id: `media-${Date.now()}`,
-        file_name: file.name,
-        file_path: filePath,
-        public_url: publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
-        created_at: new Date().toISOString(),
-      };
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
-      const updated = [newItem, ...mediaList];
-      setMediaList(updated);
-      localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(updated));
-    } catch (err) {
-      console.error('Upload error:', err);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
     }
   };
 
@@ -204,6 +223,7 @@ export const AdminMediaPage: React.FC = () => {
             onChange={handleFileUpload}
             className="hidden"
             accept="image/*,application/pdf"
+            multiple
           />
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -211,7 +231,44 @@ export const AdminMediaPage: React.FC = () => {
             className="flex items-center gap-2 px-5 py-2.5 bg-medical-600 hover:bg-medical-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition-all disabled:opacity-50"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>{uploading ? 'جارِ الرفع...' : 'رفع ملف جديد'}</span>
+            <span>{uploading ? 'جارِ الرفع...' : 'رفع صور / ملفات من الجهاز'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Drag and Drop Upload Area */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
+        }}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        className={`border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center cursor-pointer transition-all ${
+          isDragging 
+            ? 'border-medical-500 bg-medical-50/80 scale-[0.99]' 
+            : 'border-slate-300 hover:border-medical-400 bg-white shadow-soft'
+        }`}
+      >
+        <div className="max-w-md mx-auto space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-medical-50 text-medical-600 mx-auto flex items-center justify-center shadow-xs">
+            <UploadCloud className={`w-7 h-7 ${uploading ? 'animate-bounce' : ''}`} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-navy-900">
+              {uploading ? 'جارِ معالجة ورفع الملفات من جهازك...' : 'اسحب الصور والملفات هنا، أو انقر للتصفح من جهازك'}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              يدعم رفع صور متعددة دفعة واحدة (PNG, JPG, WebP) وملفات الـ PDF مع تحسين فوري للأبعاد والأداء
+            </p>
+          </div>
+          <button
+            type="button"
+            className="px-5 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            تحديد صور من الجهاز
           </button>
         </div>
       </div>
