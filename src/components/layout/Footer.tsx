@@ -13,163 +13,136 @@ import {
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-navy-950 text-slate-300 pt-16 pb-12 border-t border-navy-800">
+    <footer className="bg-navy-950 text-slate-300 pt-14 pb-10 border-t border-navy-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 pb-12 border-b border-navy-800/80">
-          {/* Column 1: Society Info */}
-          <div className="space-y-4">
+        
+        {/* Main Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-10 border-b border-navy-900">
+          
+          {/* Col 1: Society Info (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-sm">
                 <img 
                   src="/fps.png" 
                   alt="شعار جمعية أطباء الأسرة العراقية" 
-                  className="w-full h-full object-contain rounded-lg"
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base leading-snug">
                   جمعية أطباء الأسرة العراقية
                 </h3>
-                <p className="text-xs text-medical-300 font-sans">
-                  Iraqi Family Physicians Society (IFPS)
+                <p className="text-[11px] text-medical-300 font-sans tracking-wide">
+                  Iraqi Family Physicians Society • IFPS
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              المظلة المهنية والعلمية الرسمية لأطباء وطبيبات الأسرة في العراق. نعمل على مأسسة الرعاية الصحية الأولية والارتقاء بالتدريب والتعليم الطبي المستمر.
+            <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+              المظلة المهنية والعلمية لاختصاصيي طب الأسرة في العراق. نعمل على تعزيز التدريب السريري، مأسسة الرعاية الأولية، والتمثيل الدولي في منظمة WONCA.
             </p>
 
-            <div className="pt-1 flex items-center gap-2 text-xs text-iraqiGold-300">
-              <ShieldCheck className="w-4 h-4 text-iraqiGold-400" />
-              <span>تأسست رسمياً عام 2012</span>
+            <div className="inline-flex items-center gap-2 text-xs text-slate-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+              <ShieldCheck className="w-4 h-4 text-medical-400" />
+              <span>تأسست رسمياً في العراق عام 2012</span>
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-4 border-b border-navy-800 pb-2">
-              أقسام الموقع
+          {/* Col 2: Navigation Links (3 cols) */}
+          <div className="lg:col-span-3">
+            <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-3 text-medical-300">
+              روابط سريعة
             </h4>
-            <ul className="space-y-2.5 text-xs">
+            <ul className="space-y-2 text-xs">
               <li>
-                <Link to="/about" className="hover:text-medical-300 transition-colors">عن الجمعية والهيكل التنظيمي</Link>
+                <Link to="/about" className="hover:text-white transition-colors">عن الجمعية والقيادة</Link>
               </li>
               <li>
-                <Link to="/news" className="hover:text-medical-300 transition-colors">أحدث الأخبار والإعلانات</Link>
+                <Link to="/news" className="hover:text-white transition-colors">الأخبار والمستجدات</Link>
               </li>
               <li>
-                <Link to="/events" className="hover:text-medical-300 transition-colors">المؤتمرات والفعاليات العلمية</Link>
+                <Link to="/courses" className="hover:text-white transition-colors">دورات التعليم الطبي CPD-s</Link>
               </li>
               <li>
-                <Link to="/courses" className="hover:text-medical-300 transition-colors">منظومة التطوير المهني CPD-s</Link>
+                <Link to="/events" className="hover:text-white transition-colors">المؤتمرات العلمية</Link>
               </li>
               <li>
-                <Link to="/opportunities" className="hover:text-medical-300 transition-colors">الدراسات العليا وامتحانات البورد</Link>
+                <Link to="/opportunities" className="hover:text-white transition-colors">الدراسات العليا والزمالات</Link>
               </li>
               <li>
-                <Link to="/membership" className="hover:text-medical-300 transition-colors">إصدار وتجديد هويات الجمعية</Link>
+                <Link to="/membership" className="hover:text-white transition-colors">العضوية وإصدار الهويات</Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: International Affiliations & Resources */}
-          <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-4 border-b border-navy-800 pb-2">
-              الشراكات والروابط الرسمية
+          {/* Col 3: Official Portals & Contact (4 cols) */}
+          <div className="lg:col-span-4 space-y-4">
+            <h4 className="text-white text-xs font-bold uppercase tracking-wider text-medical-300">
+              المنصات وقنوات التواصل
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-300">
-              <li>
-                <a 
-                  href="https://id.iraqifps.org" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-1.5 hover:text-medical-300 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                  <span>بوابة الهويات الإلكترونية (id.iraqifps.org)</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://www.globalfamilydoctor.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-1.5 hover:text-medical-300 transition-colors"
-                >
-                  <Globe className="w-3.5 h-3.5 text-slate-400" />
-                  <span>المنظمة العالمية لأطباء الأسرة (WONCA World)</span>
-                </a>
-              </li>
-              <li className="flex items-center gap-1.5 text-slate-400">
-                <Award className="w-3.5 h-3.5 text-slate-500" />
-                <span>المجلس العربي للاختصاصات الصحية</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-slate-400">
-                <Award className="w-3.5 h-3.5 text-slate-500" />
-                <span>المجلس العراقي للاختصاصات الطبية</span>
-              </li>
-            </ul>
-          </div>
 
-          {/* Column 4: Contact & Social */}
-          <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-4 border-b border-navy-800 pb-2">
-              التواصل الرسمي
-            </h4>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-medical-400 shrink-0 mt-0.5" />
-                <span>المقر العام: بغداد - جمهورية العراق</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-medical-400 shrink-0" />
+            <div className="space-y-2 text-xs">
+              <a 
+                href="https://id.iraqifps.org" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5"
+              >
+                <span>بوابة الهويات المركزية (id.iraqifps.org)</span>
+                <ExternalLink className="w-3.5 h-3.5 text-medical-400" />
+              </a>
+
+              <div className="flex items-center gap-2 text-slate-400 pt-1">
+                <Mail className="w-3.5 h-3.5 text-medical-400 shrink-0" />
                 <a href="mailto:info@iraqifps.org" className="hover:text-white transition-colors">
                   info@iraqifps.org
                 </a>
               </div>
-            </div>
 
-            <div className="mt-5">
-              <span className="block text-[11px] text-slate-400 mb-2 font-medium">حسابات التواصل الاجتماعي:</span>
-              <div className="flex items-center gap-2.5">
-                <a
-                  href="https://facebook.com/iraqi.fps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-medical-600 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="صفحة الفيسبوك الرسمية"
-                >
-                  <Facebook className="w-4 h-4" />
-                </a>
-                <a
-                  href="https://instagram.com/iraqi.fps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-medical-600 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="حساب الإنستغرام الرسمي"
-                >
-                  <Instagram className="w-4 h-4" />
-                </a>
+              <div className="flex items-center gap-2 text-slate-400">
+                <MapPin className="w-3.5 h-3.5 text-medical-400 shrink-0" />
+                <span>المقر العام: بغداد، جمهورية العراق</span>
               </div>
             </div>
+
+            {/* Social Icons */}
+            <div className="pt-2 flex items-center gap-2">
+              <a
+                href="https://facebook.com/iraqi.fps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-300 hover:text-white transition-colors"
+                aria-label="فيسبوك"
+              >
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a
+                href="https://instagram.com/iraqi.fps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-300 hover:text-white transition-colors"
+                aria-label="إنستغرام"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Credits */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
+          <p>© {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS). جميع الحقوق محفوظة.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/about" className="hover:text-slate-400">من نحن</Link>
+            <span>•</span>
+            <Link to="/contact" className="hover:text-slate-400">اتصل بنا</Link>
+            <span>•</span>
+            <Link to="/admin/login" className="text-slate-400 hover:text-medical-400">دخول الإدارة</Link>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div>
-            <p>جميع الحقوق محفوظة © {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS).</p>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <Link to="/about" className="hover:text-slate-300">من نحن</Link>
-            <span>•</span>
-            <Link to="/contact" className="hover:text-slate-300">سياسة الخصوصية والاستخدام</Link>
-            <span>•</span>
-            <Link to="/admin/login" className="hover:text-medical-400">بوابة الإدارة</Link>
-          </div>
-        </div>
       </div>
     </footer>
   );

@@ -7,12 +7,10 @@ import {
   AlertCircle, 
   Facebook, 
   Instagram, 
-  ShieldCheck,
-  Phone
+  ShieldCheck
 } from 'lucide-react';
 import { submitContactMessage } from '../../lib/db';
 import { SEO } from '../../components/common/SEO';
-import { Badge } from '../../components/common/Badge';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +19,7 @@ export const ContactPage: React.FC = () => {
     phone: '',
     subject: '',
     message: '',
-    honeypot: '', // Spam trap
+    honeypot: '',
   });
 
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -30,7 +28,6 @@ export const ContactPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Spam bot trap check
     if (formData.honeypot) {
       setStatus('success');
       return;
@@ -42,7 +39,6 @@ export const ContactPage: React.FC = () => {
       return;
     }
 
-    // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setStatus('error');
@@ -77,48 +73,52 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="py-12 bg-slate-50 min-h-screen">
+    <div className="py-10 sm:py-16 bg-slate-50 min-h-screen">
       <SEO 
         title="اتصل بنا" 
         description="التواصل الرسمي مع إدارة جمعية أطباء الأسرة العراقية (IFPS)، قنوات المراسلة الآمنة والاستفسارات المهنية."
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge variant="secondary" size="md" className="mb-3">
-            قنوات الاتصال المعتمدة
-          </Badge>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-navy-900 mb-3">
-            اتصل بجمعية أطباء الأسرة العراقية
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
+        
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-medical-50 text-medical-700 text-xs font-bold border border-medical-100">
+            <Mail className="w-3.5 h-3.5" />
+            <span>قنوات المراسلة المعتمدة</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-navy-900 leading-tight">
+            اتصل بإدارة الجمعية
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-light">
-            يسعدنا استقبال استفسارات الزملاء الأطباء والمؤسسات الصحية والمهتمين بالرعاية الأولية في العراق.
+          <p className="text-xs sm:text-sm text-slate-500 font-normal">
+            يسعدنا استقبال استفسارات الزملاء الأطباء والمؤسسات الصحية في كافة محافظات العراق
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Contact Details Column */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-navy-950 text-white rounded-3xl p-8 border border-navy-800 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 pb-6 border-b border-navy-800">
-                <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
+          
+          {/* Contact Details Column (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-navy-950 text-white rounded-3xl p-6 sm:p-8 border border-navy-800 shadow-xl space-y-5">
+              <div className="flex items-center gap-3 pb-5 border-b border-navy-800">
+                <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0">
                   <img 
                     src="/fps.png" 
                     alt="IFPS" 
-                    className="w-full h-full object-contain rounded-lg"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-white">المقر العام للجمعية</h3>
-                  <span className="text-xs text-medical-300">بغداد - جمهورية العراق</span>
+                  <span className="text-xs text-medical-300 font-medium">بغداد — جمهورية العراق</span>
                 </div>
               </div>
 
-              <div className="space-y-4 text-xs sm:text-sm">
+              <div className="space-y-3.5 text-xs sm:text-sm font-normal">
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-medical-400 shrink-0 mt-0.5" />
+                  <Mail className="w-4 h-4 text-medical-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="block text-slate-400 text-xs mb-0.5">البريد الإلكتروني المعتمد:</span>
+                    <span className="block text-slate-400 text-xs mb-0.5">البريد الإلكتروني:</span>
                     <a 
                       href="mailto:info@iraqifps.org" 
                       className="font-bold text-white hover:text-medical-300 transition-colors font-sans"
@@ -129,62 +129,64 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-medical-400 shrink-0 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-medical-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="block text-slate-400 text-xs mb-0.5">العنوان الرسمي:</span>
+                    <span className="block text-slate-400 text-xs mb-0.5">العنوان:</span>
                     <span className="text-slate-200">بغداد، جمهورية العراق</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-navy-800">
-                <span className="block text-xs text-slate-400 mb-3 font-medium">قنوات التواصل الاجتماعي الرسمية:</span>
-                <div className="flex items-center gap-3">
+              <div className="pt-5 border-t border-navy-800">
+                <span className="block text-xs text-slate-400 mb-2.5 font-medium">حسابات التواصل الاجتماعي:</span>
+                <div className="flex items-center gap-2.5">
                   <a
                     href="https://facebook.com/iraqi.fps"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
                   >
                     <Facebook className="w-4 h-4 text-medical-400" />
-                    <span>facebook / iraqi.fps</span>
+                    <span>iraqi.fps</span>
                   </a>
 
                   <a
                     href="https://instagram.com/iraqi.fps"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
                   >
                     <Instagram className="w-4 h-4 text-medical-400" />
-                    <span>instagram / iraqi.fps</span>
+                    <span>iraqi.fps</span>
                   </a>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-soft flex items-center gap-3 text-xs text-slate-600">
-              <ShieldCheck className="w-6 h-6 text-medical-600 shrink-0" />
-              <span>يتم استقبال كافة الرسائل ومعالجتها بسرية ومهنية تامة وفق المعايير المؤسسية.</span>
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-soft flex items-center gap-3 text-xs text-slate-600 font-normal">
+              <ShieldCheck className="w-5 h-5 text-medical-500 shrink-0" />
+              <span>يتم استقبال كافة الرسائل ومتابعتها بسرية تامة من قبل المعنيين في الجمعية.</span>
             </div>
           </div>
 
-          {/* Secure Message Form Column */}
+          {/* Secure Message Form Column (7 cols) */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/80 shadow-soft">
-              <h2 className="text-xl font-bold text-navy-900 mb-1">إرسال رسالة أو استفسار رسمي</h2>
-              <p className="text-xs text-slate-500 mb-6">يرجى كتابة بياناتك وتفاصيل استفسارك وسيتم الرد عليكم في أقرب وقت.</p>
+            <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-100 shadow-soft space-y-5">
+              <div>
+                <h2 className="text-xl font-black text-navy-900 mb-1">إرسال استفسار أو رسالة</h2>
+                <p className="text-xs text-slate-500 font-normal">يرجى كتابة تفاصيل استفسارك وسيتم الرد عليكم عبر البريد الإلكتروني.</p>
+              </div>
 
               {status === 'success' ? (
-                <div className="p-8 text-center bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900 space-y-3">
+                <div className="p-8 text-center bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-900 space-y-3">
                   <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                  <h3 className="text-lg font-bold">تم إرسال رسالتكم بنجاح!</h3>
-                  <p className="text-xs sm:text-sm text-emerald-800 max-w-md mx-auto">
-                    شكراً لتواصلكم مع جمعية أطباء الأسرة العراقية. تم استلام الرسالة في المنظومة الإدارية وسيتم مراجعتها من قبل المعنيين.
+                  <h3 className="text-base font-bold">تم إرسال رسالتكم بنجاح</h3>
+                  <p className="text-xs text-emerald-700 max-w-sm mx-auto">
+                    شكراً لتواصلكم مع جمعية أطباء الأسرة العراقية. تم استلام رسالتكم وسيتم الرد في أقرب وقت.
                   </p>
                   <button
                     onClick={() => setStatus('idle')}
-                    className="mt-4 px-6 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors"
+                    className="mt-2 px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors"
                   >
                     إرسال رسالة أخرى
                   </button>
@@ -198,11 +200,11 @@ export const ContactPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Anti-spam Honeypot field (hidden from real users) */}
+                  {/* Honeypot */}
                   <div className="hidden" aria-hidden="true">
                     <input
                       type="text"
-                      name="website_url_honey"
+                      name="honeypot"
                       value={formData.honeypot}
                       onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
                       tabIndex={-1}
@@ -220,8 +222,8 @@ export const ContactPage: React.FC = () => {
                         required
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        placeholder="د. الاسم الرباعي واللقب"
-                        className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:bg-white"
+                        placeholder="د. الاسم واللقب"
+                        className="w-full px-4 py-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-medical-500 font-medium"
                       />
                     </div>
 
@@ -234,8 +236,8 @@ export const ContactPage: React.FC = () => {
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="name@example.com"
-                        className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:bg-white text-left font-sans"
+                        placeholder="example@domain.com"
+                        className="w-full px-4 py-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-medical-500 font-medium text-left"
                         dir="ltr"
                       />
                     </div>
@@ -250,8 +252,8 @@ export const ContactPage: React.FC = () => {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+964 7XX XXX XXXX"
-                        className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:bg-white text-left font-sans"
+                        placeholder="07XXXXXXXXX"
+                        className="w-full px-4 py-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-medical-500 font-medium text-left"
                         dir="ltr"
                       />
                     </div>
@@ -264,41 +266,41 @@ export const ContactPage: React.FC = () => {
                         type="text"
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        placeholder="مثال: استفسار عن دورات CPD-s أو العضوية"
-                        className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:bg-white"
+                        placeholder="مثال: استفسار حول منظومة CPD-s"
+                        className="w-full px-4 py-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-medical-500 font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-navy-900 mb-1.5">
-                      نص الرسالة أو الملاحظات <span className="text-rose-500">*</span>
+                      نص الرسالة أو الاستفسار <span className="text-rose-500">*</span>
                     </label>
                     <textarea
                       required
                       rows={5}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="اكتب تفاصيل استفسارك هنا..."
-                      className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:bg-white resize-y"
+                      placeholder="اكتب استفسارك هنا بكل وضوح..."
+                      className="w-full px-4 py-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-medical-500 font-medium resize-none"
                     />
                   </div>
 
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={status === 'submitting'}
-                      className="w-full py-3.5 px-6 bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <Send className="w-4 h-4" />
-                      <span>{status === 'submitting' ? 'جارِ الإرسال...' : 'إرسال الرسالة إلى إدارة الجمعية'}</span>
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={status === 'submitting'}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-2xl text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{status === 'submitting' ? 'جارِ الإرسال...' : 'إرسال الرسالة'}</span>
+                  </button>
                 </form>
               )}
             </div>
           </div>
+
         </div>
+
       </div>
     </div>
   );

@@ -9,13 +9,13 @@ import {
   Award, 
   BookOpen, 
   Globe, 
-  Users, 
-  MapPin, 
-  CheckCircle2, 
   ChevronLeft,
   GraduationCap,
+  ExternalLink,
   Sparkles,
-  ExternalLink
+  MapPin,
+  CheckCircle2,
+  Stethoscope
 } from 'lucide-react';
 import { getPosts, getSettings } from '../../lib/db';
 import { Post, SiteSetting } from '../../types';
@@ -28,25 +28,22 @@ export const HomePage: React.FC = () => {
   const [news, setNews] = useState<Post[]>([]);
   const [courses, setCourses] = useState<Post[]>([]);
   const [events, setEvents] = useState<Post[]>([]);
-  const [opportunities, setOpportunities] = useState<Post[]>([]);
   const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadHomeContent() {
       try {
-        const [newsRes, coursesRes, eventsRes, oppsRes, setts] = await Promise.all([
+        const [newsRes, coursesRes, eventsRes, setts] = await Promise.all([
           getPosts({ contentTypeSlug: 'news', limit: 3 }),
           getPosts({ contentTypeSlug: 'courses', limit: 3 }),
           getPosts({ contentTypeSlug: 'events', limit: 2 }),
-          getPosts({ contentTypeSlug: 'opportunities', limit: 2 }),
           getSettings(),
         ]);
 
         setNews(newsRes.posts);
         setCourses(coursesRes.posts);
         setEvents(eventsRes.posts);
-        setOpportunities(oppsRes.posts);
         setSettings(setts);
       } catch (e) {
         console.error('Error loading home data:', e);
@@ -61,503 +58,495 @@ export const HomePage: React.FC = () => {
   const idSystemUrl = settings['id_system_url']?.value_ar || 'https://id.iraqifps.org';
 
   return (
-    <>
+    <div className="space-y-12 sm:space-y-20 pb-16">
       <SEO 
         title="الرئيسية" 
         description="الموقع الرسمي لجمعية أطباء الأسرة العراقية (IFPS) - المظلة المهنية والعلمية لأطباء الأسرة في العراق، شريككم الدائم نحو صحة أفضل."
       />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 text-white pt-12 pb-20 lg:pt-20 lg:pb-28">
-        {/* Subtle Geometric Background */}
-        <div className="absolute inset-0 pattern-grid opacity-15 pointer-events-none" />
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-medical-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-iraqiGold-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Content Column */}
-            <div className="lg:col-span-7 space-y-6 text-right">
-              {/* Institutional Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-navy-800/80 border border-navy-700/80 text-medical-300 text-xs sm:text-sm font-medium backdrop-blur-sm shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-medical-400 shrink-0" />
-                <span>المظلة المهنية والعلمية الرسمية لأطباء الأسرة في العراق منذ 2012</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.2] tracking-tight">
-                نحو نظام صحي وطني حديث يرتكز على <span className="text-transparent bg-clip-text bg-gradient-to-l from-medical-300 via-medical-400 to-teal-200">الوقاية ورعاية الأسرة</span>
-              </h1>
-
-              <p className="text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl font-light">
-                نحن لا ننتظر المرض لنعالجه، بل نعمل لنحميك منه أولاً. نقود مسيرة تطوير طب الأسرة في العراق، ومأسسة منظومة التطوير المهني المستدام، ودعم تطبيق قانون الضمان الصحي الوطني بشراكة دولية مع منظمة WONCA العالمية.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex flex-wrap items-center gap-3.5">
-                <Link
-                  to="/membership"
-                  className="flex items-center gap-2 bg-gradient-to-r from-medical-500 to-medical-600 hover:from-medical-600 hover:to-medical-700 text-white font-bold px-6 py-3.5 rounded-xl text-sm shadow-lg shadow-medical-900/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>إصدار وتجديد الهويات المهنية</span>
-                </Link>
-
-                <Link
-                  to="/about"
-                  className="flex items-center gap-2 bg-navy-800/80 hover:bg-navy-800 text-slate-200 hover:text-white font-semibold px-5 py-3.5 rounded-xl text-sm border border-navy-700 transition-all hover:border-slate-500"
-                >
-                  <span>التعرف على الجمعية ورسالتها</span>
-                  <ChevronLeft className="w-4 h-4" />
-                </Link>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="pt-4 flex flex-wrap items-center gap-6 text-xs text-slate-400 border-t border-navy-800/80">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-medical-400" />
-                  <span>اعتماد المجلس العلمي لطب الأسرة</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Globe className="w-4 h-4 text-medical-400" />
-                  <span>تمثيل العراق في WONCA World</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-iraqiGold-400" />
-                  <span>منظومة التطوير المهني CPD-s</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Card / Emblem Column */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-full max-w-md bg-navy-900/90 border border-navy-700/80 rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
-                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-navy-800">
-                  <div className="w-16 h-16 rounded-2xl bg-white p-1.5 shrink-0 flex items-center justify-center shadow-md">
-                    <img 
-                      src={emblemUrl} 
-                      alt="الختم الرسمي لجمعية أطباء الأسرة العراقية" 
-                      className="w-full h-full object-contain rounded-xl"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">جمعية أطباء الأسرة العراقية</h3>
-                    <p className="text-xs text-medical-300">Iraqi Family Physicians Society</p>
-                    <span className="inline-block mt-1 text-[11px] bg-medical-900/60 text-medical-200 px-2 py-0.5 rounded border border-medical-700/50">
-                      شريككم الدائم نحو صحة أفضل
-                    </span>
-                  </div>
-                </div>
-
-                {/* President Quote Card */}
-                <div className="bg-navy-950/80 rounded-2xl p-4 border border-navy-800/80 relative mb-6">
-                  <div className="text-xs text-slate-300 leading-relaxed italic mb-3">
-                    "إننا نؤمن إيماناً راسخاً بأن طب الأسرة هو حجر الزاوية الحقيقي لبناء نظام صحي وطني مستدام وفعال. طبيب الأسرة ليس مجرد مقدم خدمة، بل هو الشريك الموثوق والدائم لصحة الفرد والعائلة وخط الدفاع الأول."
-                  </div>
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-navy-800">
-                    <span className="font-bold text-white">الطبيب الاستشاري د. منتظر سعد</span>
-                    <span className="text-[11px] text-iraqiGold-400">رئيس الجمعية</span>
-                  </div>
-                </div>
-
-                {/* Direct Actions in Card */}
-                <div className="space-y-2">
-                  <Link 
-                    to="/courses"
-                    className="flex items-center justify-between p-3 rounded-xl bg-navy-800/60 hover:bg-navy-800 text-xs text-slate-200 hover:text-white transition-colors border border-navy-700/50"
-                  >
-                    <span className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-medical-400" />
-                      <span>جدول دورات التطوير المهني CPD-s</span>
-                    </span>
-                    <ChevronLeft className="w-4 h-4 text-slate-400" />
-                  </Link>
-
-                  <a 
-                    href={idSystemUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-xl bg-medical-900/30 hover:bg-medical-900/50 text-xs text-medical-200 hover:text-white transition-colors border border-medical-800/50"
-                  >
-                    <span className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-medical-400" />
-                      <span>التحقق من الهوية الإلكترونية (id.iraqifps.org)</span>
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-medical-400" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Numbers Banner */}
-      <section className="bg-white border-y border-slate-200/80 py-8 shadow-xs">
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION (Clean, Spacious, Contemporary) */}
+      {/* ========================================================================= */}
+      <section className="relative overflow-hidden pt-6 sm:pt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-extrabold text-navy-900 font-sans">2012</span>
-              <p className="text-xs text-slate-500 font-medium">سنة التأسيس والانطلاق الرسمي</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-extrabold text-medical-600 font-sans">WONCA</span>
-              <p className="text-xs text-slate-500 font-medium">تمثيل مهني في المنظمة العالمية</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-extrabold text-navy-900 font-sans">CPD-s</span>
-              <p className="text-xs text-slate-500 font-medium">منظومة معيارية للتطوير المستدام</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-extrabold text-iraqiGold-600 font-sans">18</span>
-              <p className="text-xs text-slate-500 font-medium">محافظة تشملها خدمات ونشاطات الجمعية</p>
-            </div>
-          </div>
-        </div>
-      </section>
+          <div className="relative rounded-3xl bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950 text-white p-6 sm:p-12 lg:p-16 overflow-hidden border border-navy-800 shadow-xl">
+            
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 left-1/4 w-80 h-80 bg-medical-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-10 w-80 h-80 bg-medical-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Section 1: Latest News */}
-      <section className="py-16 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <div className="flex items-center gap-2 text-medical-600 text-xs font-bold uppercase tracking-wider mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>المستجدات والنشاطات</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-navy-900">
-                أحدث الأخبار والإعلانات الرسمية
-              </h2>
-            </div>
-            <Link 
-              to="/news"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-medical-600 hover:text-medical-700 transition-colors"
-            >
-              <span>عرض جميع الأخبار</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {loading ? (
-            <LoadingSpinner />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {news.map((item) => (
-                <Card key={item.id} className="flex flex-col h-full">
-                  <div className="relative aspect-video overflow-hidden bg-slate-100">
-                    <img 
-                      src={item.featured_image || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80'} 
-                      alt={item.title_ar}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                    {item.is_pinned && (
-                      <span className="absolute top-3 right-3 bg-amber-500 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
-                        مثبت
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-slate-400 mb-2.5">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{new Date(item.published_at || item.created_at).toLocaleDateString('ar-IQ')}</span>
-                      </div>
-                      <h3 className="font-bold text-navy-900 text-base leading-snug mb-2 hover:text-medical-600 transition-colors line-clamp-2">
-                        <Link to={`/news/${item.slug}`}>{item.title_ar}</Link>
-                      </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed line-clamp-3 mb-4">
-                        {item.summary_ar}
-                      </p>
-                    </div>
-
-                    <Link 
-                      to={`/news/${item.slug}`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-medical-600 hover:text-medical-700 pt-3 border-t border-slate-100"
-                    >
-                      <span>قراءة الخبر كاملاً</span>
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Section 2: CPD Courses & Workshops */}
-      <section className="py-16 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <div className="flex items-center gap-2 text-medical-600 text-xs font-bold uppercase tracking-wider mb-1">
-                <GraduationCap className="w-4 h-4" />
-                <span>التعليم الطبي المستمر</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-navy-900">
-                منظومة التدريب والتطوير المهني المستدام (CPD-s)
-              </h2>
-            </div>
-            <Link 
-              to="/courses"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-medical-600 hover:text-medical-700 transition-colors"
-            >
-              <span>جميع الدورات والورش</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {courses.map((item) => (
-              <Card key={item.id} className="border-t-4 border-t-medical-500 flex flex-col justify-between p-6">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <Badge variant="secondary" size="sm">
-                      {item.metadata?.cpd_hours ? `${item.metadata.cpd_hours} ساعة معتمدة` : 'دورة تخصصية'}
-                    </Badge>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                      {item.metadata?.registration_status === 'open' ? 'التسجيل متاح' : 'قريباً'}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-navy-900 text-base mb-2 leading-snug">
-                    <Link to={`/courses/${item.slug}`} className="hover:text-medical-600 transition-colors">
-                      {item.title_ar}
-                    </Link>
-                  </h3>
-
-                  <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-3">
-                    {item.summary_ar}
-                  </p>
-
-                  <div className="space-y-1.5 text-xs text-slate-500 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    {item.metadata?.duration && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>المدة: {item.metadata.duration}</span>
-                      </div>
-                    )}
-                    {item.metadata?.mode && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>طبيعة الانعقاد: {item.metadata.mode}</span>
-                      </div>
-                    )}
-                  </div>
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              
+              {/* Text & Primary Actions */}
+              <div className="lg:col-span-7 space-y-5 text-center lg:text-right">
+                
+                {/* Institutional Pill Badge */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-medical-300 text-xs sm:text-sm font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-medical-400 shrink-0" />
+                  <span>المظلة المهنية الرسمية لأطباء الأسرة في العراق</span>
                 </div>
 
-                <div className="pt-2">
-                  <Link
-                    to={`/courses/${item.slug}`}
-                    className="block w-full py-2.5 px-4 bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold rounded-xl text-center transition-colors"
-                  >
-                    تفاصيل الدورة والتسجيل
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                {/* Primary Headline in Cairo */}
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-normal">
+                  صحة المجتمع تبدأ من <br className="hidden sm:inline" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-l from-medical-300 via-medical-400 to-teal-200">
+                    طبيب الأسرة الموثوق
+                  </span>
+                </h1>
 
-      {/* Section 3: Conferences & Events */}
-      <section className="py-16 bg-slate-50 border-t border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-4 space-y-4">
-              <div className="flex items-center gap-2 text-medical-600 text-xs font-bold uppercase tracking-wider">
-                <Calendar className="w-4 h-4" />
-                <span>اللقاءات العلمية الوطنية</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-navy-900 leading-snug">
-                المؤتمرات العلمية والملتقيات التخصصية
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                تنظم الجمعية مؤتمرات دورية لتبادل الخبرات السريرية، ومناقشة سياسات الرعاية الأولية مع وزارة الصحة، واستعراض أحدث الأبحاث الطبية العالمية.
-              </p>
-              <Link
-                to="/events"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:border-slate-400 rounded-xl text-xs font-bold text-navy-900 transition-colors shadow-xs"
-              >
-                <span>جدول الفعاليات والمؤتمرات</span>
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="lg:col-span-8 space-y-4">
-              {events.map((event) => (
-                <div 
-                  key={event.id}
-                  className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft hover:shadow-md transition-all flex flex-col sm:flex-row gap-5 items-start"
-                >
-                  <div className="w-full sm:w-28 sm:h-28 rounded-xl bg-navy-50 border border-navy-100 flex flex-col items-center justify-center text-center p-2 shrink-0">
-                    <span className="text-xs text-navy-600 font-bold">المؤتمر السنوي</span>
-                    <span className="text-lg font-black text-navy-950 font-sans my-0.5">2026</span>
-                    <span className="text-[10px] text-medical-700 bg-medical-50 px-2 py-0.5 rounded">بغداد</span>
-                  </div>
-
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="primary" size="sm">مؤتمر وطني</Badge>
-                      <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded">
-                        التسجيل مفتوح
-                      </span>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold text-navy-900 leading-snug">
-                      <Link to={`/events/${event.slug}`} className="hover:text-medical-600 transition-colors">
-                        {event.title_ar}
-                      </Link>
-                    </h3>
-
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {event.summary_ar}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-2">
-                      {event.metadata?.venue && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{event.metadata.venue}</span>
-                        </span>
-                      )}
-                      {event.metadata?.event_date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{event.metadata.event_date}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: Membership & Identity System CTA */}
-      <section className="py-16 bg-navy-950 text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="bg-gradient-to-r from-navy-900 to-navy-800 rounded-3xl p-8 sm:p-12 border border-navy-700 shadow-2xl">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-8 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-medical-900/60 border border-medical-700/60 text-medical-300 text-xs font-semibold">
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>الخدمات الإلكترونية للأعضاء</span>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-                  إصدار وتجديد هويات الجمعية والتحقق الرقمي
-                </h2>
-
-                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl font-light">
-                  تمنح هوية جمعية أطباء الأسرة العراقية حاملها الصفة التمثيلية الرسمية، وتتيح الاستفادة من برامج منظومة التطوير المهني CPD-s، والخصومات المعتمدة في المؤتمرات الدولية، وتسهيل الإجراءات الإدارية.
+                {/* Clean, Concise Subtitle */}
+                <p className="text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
+                  نقود تطوير الرعاية الصحية الأولية في العراق عبر برامج التدريب المستمر (CPD-s)، تعزيز البحث العلمي، والشراكة الدولية الفاعلة مع منظمة WONCA العالمية.
                 </p>
 
-                <div className="pt-2 flex flex-wrap items-center gap-4">
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Link
                     to="/membership"
-                    className="px-6 py-3 bg-medical-500 hover:bg-medical-600 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white font-bold px-6 py-3.5 rounded-2xl text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    دليل شروط التقديم والتجديد
+                    <CreditCard className="w-4 h-4" />
+                    <span>إصدار وتجديد الهويات المهنية</span>
                   </Link>
 
+                  <Link
+                    to="/about"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-semibold px-5 py-3.5 rounded-2xl text-sm border border-white/10 transition-colors"
+                  >
+                    <span>عن الجمعية ورسالتها</span>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                {/* Trust Badges */}
+                <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-5 text-xs text-slate-300">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-medical-400" />
+                    <span>تأسست 2012</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-medical-400" />
+                    <span>عضوية WONCA World</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-medical-400" />
+                    <span>اعتماد ساعات CPD-s</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Showcase (Emblem & Quick Info Card) */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="relative w-full max-w-sm bg-white/10 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 text-center shadow-2xl">
+                  
+                  {/* Emblem */}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 p-2 bg-white rounded-3xl shadow-lg flex items-center justify-center">
+                    <img 
+                      src={emblemUrl} 
+                      alt="شعار جمعية أطباء الأسرة العراقية" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  <h2 className="text-white font-black text-lg mb-1">
+                    جمعية أطباء الأسرة العراقية
+                  </h2>
+                  <p className="text-xs text-medical-300 font-sans tracking-wide mb-5">
+                    Iraqi Family Physicians Society • IFPS
+                  </p>
+
+                  <div className="bg-navy-950/60 rounded-2xl p-4 border border-white/10 text-right space-y-2 mb-4">
+                    <div className="text-xs text-slate-200 leading-relaxed font-light">
+                      "طبيب الأسرة هو خط الدفاع الأول والشريك الدائم لصحة الفرد والعائلة في كل مراحل الحياة."
+                    </div>
+                    <div className="text-[11px] font-bold text-medical-300">
+                      الطبيب الاستشاري د. منتظر سعد — رئيس الجمعية
+                    </div>
+                  </div>
+
+                  {/* Direct portal pill */}
                   <a
                     href={idSystemUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-5 py-3 bg-navy-800 hover:bg-navy-700 text-slate-200 hover:text-white font-semibold rounded-xl text-xs sm:text-sm border border-navy-600 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl bg-medical-500/20 hover:bg-medical-500/30 text-white text-xs font-semibold border border-medical-500/30 transition-all"
                   >
-                    <span>الدخول المباشر لبوابة الهويات (id.iraqifps.org)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-medical-400" />
+                      <span>التحقق من صحة الهوية الإلكترونية</span>
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 text-medical-300" />
                   </a>
                 </div>
               </div>
 
-              <div className="lg:col-span-4 flex justify-center">
-                <div className="w-56 h-36 bg-gradient-to-br from-medical-600 via-medical-700 to-navy-900 rounded-2xl p-4 text-white shadow-xl border border-medical-400/30 flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold tracking-wider">IFPS IRAQ</span>
-                    <ShieldCheck className="w-5 h-5 text-medical-200" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="block text-xs font-mono tracking-widest text-medical-100">•••• •••• •••• 2026</span>
-                    <span className="block text-[11px] font-bold">هوية طبيب أسرة اختصاص</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[9px] text-medical-200">
-                    <span>جمهورية العراق</span>
-                    <span>منظمة WONCA</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 5: Postgraduate & Fellowships Teaser */}
-      <section className="py-16 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <div className="flex items-center gap-2 text-medical-600 text-xs font-bold uppercase tracking-wider mb-1">
-                <Award className="w-4 h-4" />
-                <span>المسار الأكاديمي والمهني</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-navy-900">
-                الدراسات العليا، البورد العربي، والفرص العلمية
-              </h2>
+      {/* ========================================================================= */}
+      {/* 2. STATS & KEY METRICS (Clean Minimal Row) */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-slate-100">
+            <div className="text-center space-y-1 pt-2 sm:pt-0">
+              <span className="text-2xl sm:text-3xl font-black text-navy-900 font-sans">2012</span>
+              <p className="text-xs text-slate-500 font-medium">سنة التأسيس والانطلاق</p>
             </div>
-            <Link 
-              to="/opportunities"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-medical-600 hover:text-medical-700 transition-colors"
-            >
-              <span>جميع الإعلانات الأكاديمية</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
+            <div className="text-center space-y-1 pt-2 sm:pt-0">
+              <span className="text-2xl sm:text-3xl font-black text-medical-600 font-sans">WONCA</span>
+              <p className="text-xs text-slate-500 font-medium">التمثيل في المنظمة العالمية</p>
+            </div>
+            <div className="text-center space-y-1 pt-2 sm:pt-0">
+              <span className="text-2xl sm:text-3xl font-black text-navy-900 font-sans">CPD-s</span>
+              <p className="text-xs text-slate-500 font-medium">منظومة التطوير المهني المستدام</p>
+            </div>
+            <div className="text-center space-y-1 pt-2 sm:pt-0">
+              <span className="text-2xl sm:text-3xl font-black text-navy-900 font-sans">18</span>
+              <p className="text-xs text-slate-500 font-medium">محافظة تغطيها نشاطاتنا</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 3. CORE PILLARS (Clean 3 Cards) */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-black text-navy-900 mb-2">
+            محاور عمل الجمعية
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500">
+            خدمات مهنية وأكاديمية متكاملة تدعم أطباء الأسرة في كافة محافظات العراق
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Card 1: CPD */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft hover:shadow-md transition-all group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-medical-50 text-medical-600 flex items-center justify-center">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-navy-900 group-hover:text-medical-600 transition-colors">
+                التطوير المهني المستمر (CPD-s)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                برامج تدريبية وورش عمل سريرية معتمدة بساعات تعليم طبي تسهم في الترقية الأكاديمية والمهنية.
+              </p>
+            </div>
+            <div className="pt-6">
+              <Link
+                to="/courses"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 hover:text-medical-700"
+              >
+                <span>استعراض الدورات المتاحة</span>
+                <ChevronLeft className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {opportunities.map((item) => (
-              <Card key={item.id} className="p-6 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <Badge variant="primary" size="sm">البورد العربي والعراقي</Badge>
-                    {item.metadata?.deadline && (
-                      <span className="text-xs text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-medium">
-                        الموعد النهائي: {item.metadata.deadline}
-                      </span>
-                    )}
+          {/* Card 2: Conferences */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft hover:shadow-md transition-all group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-navy-50 text-navy-800 flex items-center justify-center">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-navy-900 group-hover:text-medical-600 transition-colors">
+                المؤتمرات والفعاليات العلمية
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                ملتقيات سنوية وندوات متخصصة لمناقشة أحدث بروتوكولات الرعاية الأولية وتبادل الخبرات الطبية.
+              </p>
+            </div>
+            <div className="pt-6">
+              <Link
+                to="/events"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 hover:text-medical-700"
+              >
+                <span>جدول المؤتمرات القادمة</span>
+                <ChevronLeft className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Membership & IDs */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft hover:shadow-md transition-all group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-navy-900 group-hover:text-medical-600 transition-colors">
+                العضوية والهويات المهنية
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                إصدار وتجديد هويات الجمعية الذكية عبر المنصة الرقمية الموحدة مع خاصية التحقق الإلكتروني.
+              </p>
+            </div>
+            <div className="pt-6">
+              <Link
+                to="/membership"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 hover:text-medical-700"
+              >
+                <span>دليل العضوية وشروطها</span>
+                <ChevronLeft className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. LATEST NEWS (Modern Editorial Cards) */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-navy-900">
+              أحدث الأخبار والنشاطات
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">متابعة مستمرة لفعاليات الجمعية والمستجدات الطبية</p>
+          </div>
+          <Link 
+            to="/news"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-medical-600 hover:text-medical-700 transition-colors"
+          >
+            <span>كل الأخبار</span>
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {news.map((item) => (
+              <div 
+                key={item.id} 
+                className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-soft hover:shadow-md transition-all flex flex-col group"
+              >
+                <div className="relative aspect-video overflow-hidden bg-slate-100">
+                  <img 
+                    src={item.featured_image || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80'} 
+                    alt={item.title_ar}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {item.is_pinned && (
+                    <span className="absolute top-3 right-3 bg-navy-900/90 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                      مثبت
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {new Date(item.published_at || item.created_at).toLocaleDateString('ar-IQ')}
+                    </span>
+                    <h3 className="font-bold text-navy-900 text-base leading-snug line-clamp-2 group-hover:text-medical-600 transition-colors">
+                      <Link to={`/news/${item.slug}`}>{item.title_ar}</Link>
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                      {item.summary_ar}
+                    </p>
                   </div>
 
-                  <h3 className="font-bold text-navy-900 text-base mb-2 leading-snug">
-                    <Link to={`/opportunities/${item.slug}`} className="hover:text-medical-600 transition-colors">
-                      {item.title_ar}
+                  <div className="pt-4 mt-4 border-t border-slate-50">
+                    <Link 
+                      to={`/news/${item.slug}`}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-navy-900 group-hover:text-medical-600 transition-colors"
+                    >
+                      <span>قراءة التفاصيل</span>
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. CPD COURSES & UPCOMING EVENTS (Balanced Split) */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Courses Column (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-navy-900">
+                  دورات التعليم الطبي المستمر (CPD-s)
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">ورش تخصصية معتمدة لتطوير الكفاءات السريرية</p>
+              </div>
+              <Link 
+                to="/courses"
+                className="text-xs font-bold text-medical-600 hover:text-medical-700"
+              >
+                المزيد
+              </Link>
+            </div>
+
+            <div className="space-y-4">
+              {courses.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-soft hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-medical-700 bg-medical-50 px-2.5 py-0.5 rounded-full">
+                        {item.metadata?.cpd_hours ? `${item.metadata.cpd_hours} ساعات معتمدة` : 'دورة معتمدة'}
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        التسجيل متاح
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-navy-900 text-sm sm:text-base leading-snug">
+                      <Link to={`/courses/${item.slug}`} className="hover:text-medical-600 transition-colors">
+                        {item.title_ar}
+                      </Link>
+                    </h3>
+
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      {item.metadata?.duration && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{item.metadata.duration}</span>
+                        </span>
+                      )}
+                      {item.metadata?.mode && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>{item.metadata.mode}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/courses/${item.slug}`}
+                    className="shrink-0 px-4 py-2.5 bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold rounded-xl text-center transition-colors"
+                  >
+                    التفاصيل والتسجيل
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Events Column (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-navy-900">
+                  المؤتمرات القادمة
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">ملتقيات علمية وطنية ودولية</p>
+              </div>
+              <Link 
+                to="/events"
+                className="text-xs font-bold text-medical-600 hover:text-medical-700"
+              >
+                المزيد
+              </Link>
+            </div>
+
+            <div className="space-y-4">
+              {events.map((event) => (
+                <div 
+                  key={event.id}
+                  className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-soft hover:shadow-md transition-all space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-navy-900 bg-navy-50 px-2.5 py-0.5 rounded-full">
+                      مؤتمر علمي
+                    </span>
+                    <span className="text-xs font-bold text-medical-600">
+                      بغداد 2026
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-navy-900 text-sm sm:text-base leading-snug">
+                    <Link to={`/events/${event.slug}`} className="hover:text-medical-600 transition-colors">
+                      {event.title_ar}
                     </Link>
                   </h3>
 
-                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                    {item.summary_ar}
+                  <p className="text-xs text-slate-500 line-clamp-2">
+                    {event.summary_ar}
                   </p>
-                </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-500">
-                    الجهة: {item.metadata?.authority || 'المجلس العلمي لاختصاص طب الأسرة'}
-                  </span>
-                  <Link
-                    to={`/opportunities/${item.slug}`}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-medical-600 hover:text-medical-700"
-                  >
-                    <span>التفاصيل والشروط</span>
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-50">
+                    <span className="text-slate-400">
+                      {event.metadata?.venue || 'بغداد - جمهورية العراق'}
+                    </span>
+                    <Link 
+                      to={`/events/${event.slug}`}
+                      className="font-bold text-medical-600 hover:text-medical-700"
+                    >
+                      التفاصيل
+                    </Link>
+                  </div>
                 </div>
-              </Card>
-            ))}
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. IDENTITY SYSTEM DIRECT BANNER (Clean Institutional Callout) */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 text-white rounded-3xl p-6 sm:p-10 border border-navy-800 shadow-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <div className="lg:col-span-8 space-y-3 text-center lg:text-right">
+              <span className="text-[11px] font-bold text-medical-300 uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full inline-block">
+                المنظومة الإلكترونية المركزية
+              </span>
+              <h2 className="text-xl sm:text-3xl font-black text-white">
+                بوابة إصدار وتجديد الهويات (id.iraqifps.org)
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-normal">
+                منصة رقمية موحدة لإدارة سجلات أعضاء الجمعية، تقديم طلبات الهوية الجديدة، وتجديد العضوية إلكترونياً وبأمان تام.
+              </p>
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
+              <a
+                href={idSystemUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition-all"
+              >
+                <span>الدخول لمنصة الهويات</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+
+              <Link
+                to="/membership"
+                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 px-5 rounded-2xl text-xs font-semibold border border-white/10 transition-colors"
+              >
+                <span>دليل الشروط والوثائق المطلوبة</span>
+              </Link>
+            </div>
+
           </div>
         </div>
       </section>
-    </>
+
+    </div>
   );
 };
