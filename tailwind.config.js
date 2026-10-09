@@ -48,8 +48,8 @@ export default {
         },
       },
       fontFamily: {
-        arabic: ['"Cairo"', 'system-ui', 'sans-serif'],
-        sans: ['"Cairo"', '"Inter"', 'system-ui', 'sans-serif'],
+        arabic: ['"Cairo"', 'sans-serif'],
+        sans: ['"Cairo"', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
