@@ -137,6 +137,17 @@ export const HomePage: React.FC = () => {
               <div className="lg:col-span-5 flex justify-center">
                 <div className="relative w-full max-w-sm bg-white/10 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 text-center shadow-2xl">
                   
+                  {/* Digital Media & Communications Glowing Tag */}
+                  <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-medical-500/20 border border-medical-400/50 shadow-[0_0_20px_rgba(45,212,191,0.3)] backdrop-blur-md">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-300 opacity-80"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-300 shadow-[0_0_8px_#2dd4bf]"></span>
+                    </span>
+                    <span className="text-xs sm:text-sm font-black text-teal-200 animate-glow-text tracking-wide">
+                      الإعلام والتواصل الرقمي
+                    </span>
+                  </div>
+
                   {/* Emblem */}
                   <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 p-2 bg-white rounded-3xl shadow-lg flex items-center justify-center">
                     <img 

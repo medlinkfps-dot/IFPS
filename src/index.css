@@ -107,3 +107,21 @@
   background-color: #f1f5f9;
   color: #0b2545;
 }
+
+/* Glowing text animation for Digital Media header */
+@keyframes textGlowPulse {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(45, 212, 191, 0.9), 0 0 20px rgba(45, 212, 191, 0.6), 0 0 30px rgba(20, 184, 166, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    text-shadow: 0 0 4px rgba(45, 212, 191, 0.3), 0 0 8px rgba(45, 212, 191, 0.2);
+    transform: scale(0.98);
+  }
+}
+
+.animate-glow-text {
+  animation: textGlowPulse 2.4s ease-in-out infinite;
+}
