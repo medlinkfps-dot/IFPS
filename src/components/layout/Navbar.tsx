@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { getNavigationItems, getSettings } from '../../lib/db';
+import { INITIAL_NAVIGATION } from '../../lib/mockData';
 import { NavigationItem, SiteSetting } from '../../types';
 import { useAuth } from '../../lib/auth';
 
@@ -33,7 +34,9 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
 };
 
 export const Navbar: React.FC = () => {
-  const [navItems, setNavItems] = useState<NavigationItem[]>([]);
+  const [navItems, setNavItems] = useState<NavigationItem[]>(() =>
+    INITIAL_NAVIGATION.filter((item) => item.is_active && item.path !== '/opportunities')
+  );
   const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -73,13 +76,13 @@ export const Navbar: React.FC = () => {
 
   return (
     <header 
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 py-3' 
-          : 'bg-white/90 backdrop-blur-sm border-b border-slate-100/80 py-3.5 sm:py-4'
+      className={`sticky top-0 z-50 transition-colors duration-200 ${
+        isScrolled || isMobileMenuOpen
+          ? 'bg-white shadow-md border-b border-slate-200' 
+          : 'bg-white/95 backdrop-blur-md border-b border-slate-100'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
         <div className="flex items-center justify-between">
           
           {/* Official Brand / Logo */}
@@ -167,13 +170,13 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Navigation */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-[65px] bottom-0 bg-white/95 backdrop-blur-xl z-40 border-t border-slate-100 overflow-y-auto px-5 py-6 flex flex-col justify-between animate-in slide-in-from-top-2 duration-200">
-          <div className="space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
+        <div className="lg:hidden border-t border-slate-100 bg-white shadow-2xl max-h-[calc(100dvh-75px)] overflow-y-auto px-4 py-5 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1">
               أقسام الموقع
             </div>
 
-            <div className="grid grid-cols-1 gap-1">
+            <div className="grid grid-cols-1 gap-1.5">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path || 
                   (item.path !== '/' && location.pathname.startsWith(item.path));
@@ -185,7 +188,8 @@ export const Navbar: React.FC = () => {
                     href={item.path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between px-3.5 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-slate-400">{icon}</span>
@@ -197,7 +201,8 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={item.id}
                     to={item.path}
-                    className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-sm font-bold transition-all ${
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
                       isActive 
                         ? 'bg-navy-900 text-white shadow-sm' 
                         : 'text-slate-700 hover:bg-slate-50'
@@ -214,13 +219,17 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Footer CTAs */}
-          <div className="pt-6 border-t border-slate-100 mt-6">
-            <div className="flex items-center justify-between text-xs text-slate-400 px-2">
-              <a href="mailto:info@iraqifps.org" className="hover:text-navy-900">
+          <div className="pt-5 border-t border-slate-100 mt-6">
+            <div className="flex items-center justify-between text-xs text-slate-500 px-2">
+              <a href="mailto:info@iraqifps.org" className="hover:text-navy-900 font-sans">
                 info@iraqifps.org
               </a>
               {user && (
-                <Link to="/admin/dashboard" className="text-medical-600 font-bold hover:underline">
+                <Link 
+                  to="/admin/dashboard" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-medical-600 font-bold hover:underline"
+                >
                   لوحة الإدارة
                 </Link>
               )}
