@@ -57,8 +57,7 @@ export const HomePage: React.FC = () => {
     loadHomeContent();
   }, []);
 
-  const emblemUrl = settings['official_emblem_url']?.value_ar || 
-    'https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg';
+  const emblemUrl = settings['official_emblem_url']?.value_ar || '/fps.png';
   const idSystemUrl = settings['id_system_url']?.value_ar || 'https://id.iraqifps.org';
 
   return (

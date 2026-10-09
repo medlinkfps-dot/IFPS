@@ -103,7 +103,7 @@ export const ContactPage: React.FC = () => {
               <div className="flex items-center gap-3 pb-6 border-b border-navy-800">
                 <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
                   <img 
-                    src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
+                    src="/fps.png" 
                     alt="IFPS" 
                     className="w-full h-full object-contain rounded-lg"
                   />

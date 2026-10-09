@@ -132,7 +132,7 @@ export const MembershipPage: React.FC = () => {
               <div className="w-64 bg-navy-900 border border-navy-700 rounded-3xl p-6 shadow-2xl space-y-4 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-white p-1.5 mx-auto flex items-center justify-center shadow">
                   <img 
-                    src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
+                    src="/fps.png" 
                     alt="ختم الجمعية" 
                     className="w-full h-full object-contain rounded-xl"
                   />

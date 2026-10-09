@@ -65,9 +65,9 @@ export const AboutPage: React.FC = () => {
             <div className="lg:col-span-4 flex justify-center">
               <div className="w-56 h-56 rounded-3xl bg-slate-50 border border-slate-200 p-6 flex flex-col items-center justify-center text-center shadow-inner">
                 <img 
-                  src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
-                  alt="شعار الجمعية" 
-                  className="w-24 h-24 object-contain rounded-2xl mb-3 shadow"
+                  src="/fps.png" 
+                  alt="شعار جمعية أطباء الأسرة العراقية" 
+                  className="w-28 h-28 object-contain rounded-2xl mb-3 shadow"
                 />
                 <span className="font-bold text-navy-900 text-sm">IFPS IRAQ</span>
                 <span className="text-[11px] text-slate-500">منذ عام 2012</span>

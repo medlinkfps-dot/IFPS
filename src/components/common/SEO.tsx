@@ -14,7 +14,7 @@ export const SEO: React.FC<SEOProps> = ({
   title,
   description = 'الموقع الرسمي لجمعية أطباء الأسرة العراقية (IFPS) - المظلة المهنية والعلمية لأطباء الأسرة في العراق، شريككم الدائم نحو صحة أفضل.',
   keywords = 'جمعية أطباء الأسرة العراقية, طب الأسرة, العراق, IFPS, WONCA, الرعاية الصحية الأولية, البورد العراقي, البورد العربي',
-  image = 'https://iraqifps.org/wp-content/uploads/2025/11/%D8%A8%D8%AF%D9%88%D9%86-%D8%AE%D9%84%D9%81%D9%8A%D8%A9-1024x284.png',
+  image = '/fps.png',
   url,
   type = 'website',
   schema,

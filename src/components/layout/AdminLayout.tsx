@@ -77,7 +77,7 @@ export const AdminLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center">
               <img 
-                src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
+                src="/fps.png" 
                 alt="IFPS" 
                 className="w-full h-full object-contain rounded"
               />

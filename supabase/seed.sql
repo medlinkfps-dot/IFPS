@@ -48,8 +48,8 @@ VALUES
     ('facebook_handle', 'iraqi.fps', 'iraqi.fps', 'معرف الفيسبوك الرسمي', 'social', true),
     ('instagram_handle', 'iraqi.fps', 'iraqi.fps', 'معرف الانستغرام الرسمي', 'social', true),
     ('id_system_url', 'https://id.iraqifps.org', 'https://id.iraqifps.org', 'رابط نظام الهويات الإلكتروني', 'links', true),
-    ('official_logo_url', 'https://iraqifps.org/wp-content/uploads/2025/11/%D8%A8%D8%AF%D9%88%D9%86-%D8%AE%D9%84%D9%81%D9%8A%D8%A9-1024x284.png', 'https://iraqifps.org/wp-content/uploads/2025/11/%D8%A8%D8%AF%D9%88%D9%86-%D8%AE%D9%84%D9%81%D9%8A%D8%A9-1024x284.png', 'رابط الشعار المعتمد', 'media', true),
-    ('official_emblem_url', 'https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg', 'https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg', 'الشعار الدائري للجمعية', 'media', true),
+    ('official_logo_url', '/fps.png', '/fps.png', 'رابط الشعار المعتمد', 'media', true),
+    ('official_emblem_url', '/fps.png', '/fps.png', 'الشعار الدائري للجمعية', 'media', true),
     ('wonca_affiliation', 'مشاركة فاعلة وممثلية مهنية في المنظمة العالمية لأطباء الأسرة (WONCA)', 'Active participation in WONCA World', 'التمثيل الدولي', 'general', true)
 ON CONFLICT (key) DO UPDATE 
 SET value_ar = EXCLUDED.value_ar, value_en = EXCLUDED.value_en;

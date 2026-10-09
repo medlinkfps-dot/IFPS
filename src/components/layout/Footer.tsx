@@ -20,10 +20,10 @@ export const Footer: React.FC = () => {
           {/* Column 1: Society Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
                 <img 
-                  src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
-                  alt="شعار الجمعية" 
+                  src="/fps.png" 
+                  alt="شعار جمعية أطباء الأسرة العراقية" 
                   className="w-full h-full object-contain rounded-lg"
                 />
               </div>

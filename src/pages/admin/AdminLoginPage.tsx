@@ -43,7 +43,7 @@ export const AdminLoginPage: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 rounded-2xl bg-white p-1.5 mx-auto mb-4 flex items-center justify-center shadow-xl border border-slate-700">
             <img 
-              src="https://iraqifps.org/wp-content/uploads/2025/11/photo_2025-11-14_19-45-19.jpg" 
+              src="/fps.png" 
               alt="IFPS" 
               className="w-full h-full object-contain rounded-xl"
             />
