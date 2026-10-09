@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
+  FileDown,
   Layers, 
   Tag, 
   Image as ImageIcon, 
@@ -47,6 +48,7 @@ export const AdminLayout: React.FC = () => {
   const navLinks = [
     { label_ar: 'لوحة التحكم', path: '/admin/dashboard', icon: LayoutDashboard },
     { label_ar: 'إدارة المنشورات', path: '/admin/posts', icon: FileText },
+    { label_ar: 'ملفات PDF والوثائق', path: '/admin/documents', icon: FileDown },
     { label_ar: 'الأقسام والمحتوى', path: '/admin/sections', icon: Layers },
     { label_ar: 'التصنيفات', path: '/admin/categories', icon: Tag },
     { label_ar: 'مكتبة الوسائط', path: '/admin/media', icon: ImageIcon },

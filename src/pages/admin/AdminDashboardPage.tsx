@@ -13,10 +13,11 @@ import {
   TrendingUp, 
   Layers, 
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  FileDown
 } from 'lucide-react';
-import { getPosts, getContactMessages, getContentTypes } from '../../lib/db';
-import { Post, ContactMessage, ContentType } from '../../types';
+import { getPosts, getContactMessages, getContentTypes, getPDFDocuments } from '../../lib/db';
+import { Post, ContactMessage, ContentType, PDFDocument } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -25,19 +26,22 @@ export const AdminDashboardPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
+  const [documents, setDocuments] = useState<PDFDocument[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const [postsRes, msgs, types] = await Promise.all([
+        const [postsRes, msgs, types, docs] = await Promise.all([
           getPosts({ limit: 100 }),
           getContactMessages(),
           getContentTypes(),
+          getPDFDocuments(),
         ]);
         setPosts(postsRes.posts);
         setMessages(msgs);
         setContentTypes(types);
+        setDocuments(docs);
       } catch (e) {
         console.error('Error loading dashboard stats:', e);
       } finally {
@@ -83,6 +87,13 @@ export const AdminDashboardPage: React.FC = () => {
             >
               <PlusCircle className="w-4 h-4" />
               <span>إنشاء منشور جديد</span>
+            </Link>
+            <Link
+              to="/admin/documents"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm border border-white/15 transition-all"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>ملفات PDF والوثائق</span>
             </Link>
             <Link
               to="/"
@@ -169,13 +180,16 @@ export const AdminDashboardPage: React.FC = () => {
           <Award className="w-5 h-5 text-slate-400" />
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center justify-between">
+        <Link 
+          to="/admin/documents"
+          className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-4 rounded-xl flex items-center justify-between transition-colors group"
+        >
           <div>
-            <span className="text-xs text-slate-500 block">أقسام المحتوى</span>
-            <span className="text-lg font-bold text-navy-900">{contentTypes.length}</span>
+            <span className="text-xs text-slate-500 block group-hover:text-medical-600">ملفات PDF والوثائق</span>
+            <span className="text-lg font-bold text-navy-900">{documents.length}</span>
           </div>
-          <Layers className="w-5 h-5 text-slate-400" />
-        </div>
+          <FileDown className="w-5 h-5 text-slate-400 group-hover:text-medical-600 transition-colors" />
+        </Link>
       </div>
 
       {/* Main Content Split: Recent Posts & Messages */}

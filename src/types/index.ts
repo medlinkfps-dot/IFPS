@@ -135,7 +135,7 @@ export interface AuditLog {
   admin_id?: string;
   admin_email: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'PUBLISH' | 'ARCHIVE' | 'LOGIN' | 'SETTINGS_UPDATE';
-  entity_type: 'post' | 'setting' | 'category' | 'user' | 'section' | 'media' | 'message';
+  entity_type: 'post' | 'setting' | 'category' | 'user' | 'section' | 'media' | 'message' | 'document';
   entity_id?: string;
   details?: any;
   ip_address?: string;
@@ -154,3 +154,18 @@ export interface ContactMessage {
   notes?: string;
   created_at: string;
 }
+
+export interface PDFDocument {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  file_url: string;
+  file_name: string;
+  file_size?: string;
+  published_date?: string;
+  downloads_count?: number;
+  is_active: boolean;
+  created_at: string;
+}
+

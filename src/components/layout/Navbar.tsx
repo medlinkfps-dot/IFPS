@@ -4,7 +4,8 @@ import {
   Menu, 
   X, 
   ExternalLink, 
-  CreditCard, 
+  FileDown,
+  FileText, 
   LogIn, 
   LayoutDashboard,
   Home,
@@ -27,7 +28,8 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
   '/events': <Calendar className="w-4 h-4" />,
   '/courses': <GraduationCap className="w-4 h-4" />,
   '/opportunities': <Award className="w-4 h-4" />,
-  '/membership': <CreditCard className="w-4 h-4" />,
+  '/documents': <FileText className="w-4 h-4" />,
+  '/membership': <FileText className="w-4 h-4" />,
   '/contact': <PhoneCall className="w-4 h-4" />,
 };
 
@@ -69,7 +71,6 @@ export const Navbar: React.FC = () => {
   }, [location.pathname]);
 
   const logoUrl = settings['official_logo_url']?.value_ar || '/fps.png';
-  const idSystemUrl = settings['id_system_url']?.value_ar || 'https://id.iraqifps.org';
 
   return (
     <header 
@@ -151,23 +152,23 @@ export const Navbar: React.FC = () => {
             ) : null}
 
             <Link
-              to="/membership"
+              to="/documents"
               className="flex items-center gap-2 bg-gradient-to-r from-medical-500 to-medical-600 hover:from-medical-600 hover:to-medical-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all hover:shadow hover:scale-[1.02] active:scale-[0.98]"
             >
-              <CreditCard className="w-4 h-4" />
-              <span>منصة الهويات</span>
+              <FileDown className="w-4 h-4" />
+              <span>الوثائق والاستمارات</span>
             </Link>
           </div>
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex items-center gap-2 lg:hidden">
             <Link
-              to="/membership"
+              to="/documents"
               className="p-2 rounded-xl text-medical-600 bg-medical-50 hover:bg-medical-100 transition-colors"
-              aria-label="الهويات"
-              title="الهويات والعضوية"
+              aria-label="الوثائق والاستمارات"
+              title="الوثائق والاستمارات الرسمية"
             >
-              <CreditCard className="w-5 h-5" />
+              <FileDown className="w-5 h-5" />
             </Link>
 
             <button
@@ -233,22 +234,12 @@ export const Navbar: React.FC = () => {
           {/* Mobile Footer CTAs */}
           <div className="pt-6 border-t border-slate-100 space-y-2.5 mt-6">
             <Link
-              to="/membership"
+              to="/documents"
               className="flex items-center justify-center gap-2 w-full bg-medical-500 hover:bg-medical-600 text-white py-3.5 rounded-2xl text-sm font-bold shadow-sm transition-all"
             >
-              <CreditCard className="w-4 h-4" />
-              <span>إصدار وتجديد الهويات المهنية</span>
+              <FileDown className="w-4 h-4" />
+              <span>تحميل الوثائق والاستمارات (PDF)</span>
             </Link>
-
-            <a
-              href={idSystemUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 text-navy-900 py-3 rounded-2xl text-xs font-bold transition-colors"
-            >
-              <span>بوابة الهويات المركزية (id.iraqifps.org)</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            </a>
 
             <div className="pt-2 flex items-center justify-between text-xs text-slate-400 px-2">
               <a href="mailto:info@iraqifps.org" className="hover:text-navy-900">

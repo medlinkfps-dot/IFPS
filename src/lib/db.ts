@@ -6,14 +6,16 @@ import {
   SiteSetting, 
   NavigationItem, 
   ContactMessage, 
-  AuditLog 
+  AuditLog,
+  PDFDocument
 } from '../types';
 import { 
   INITIAL_CONTENT_TYPES, 
   INITIAL_CATEGORIES, 
   INITIAL_POSTS, 
   INITIAL_SETTINGS, 
-  INITIAL_NAVIGATION 
+  INITIAL_NAVIGATION,
+  INITIAL_DOCUMENTS
 } from './mockData';
 
 // Local storage keys for resilient fallback
@@ -25,6 +27,7 @@ const STORAGE_KEYS = {
   NAVIGATION: 'ifps_navigation_store',
   MESSAGES: 'ifps_messages_store',
   AUDIT_LOGS: 'ifps_audit_logs_store',
+  DOCUMENTS: 'ifps_documents_store',
 };
 
 // Helper to initialize local storage if needed
@@ -572,3 +575,93 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
   }
   return getStoredData<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
 }
+
+// ------------------------------------------------------------------------------
+// 8. PDF DOCUMENTS & DOWNLOADS
+// ------------------------------------------------------------------------------
+export async function getPDFDocuments(): Promise<PDFDocument[]> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('pdf_documents')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) return data;
+  }
+  return getStoredData<PDFDocument[]>(STORAGE_KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
+}
+
+export async function createPDFDocument(doc: Omit<PDFDocument, 'id' | 'created_at'>): Promise<PDFDocument> {
+  const newDoc: PDFDocument = {
+    ...doc,
+    id: `doc-${Date.now()}`,
+    downloads_count: doc.downloads_count || 0,
+    created_at: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('pdf_documents')
+      .insert(newDoc)
+      .select()
+      .single();
+    if (!error && data) {
+      await logAdminAction('CREATE', 'document', data.id, { title: data.title });
+      return data;
+    }
+  }
+
+  const docs = await getPDFDocuments();
+  const updated = [newDoc, ...docs];
+  setStoredData(STORAGE_KEYS.DOCUMENTS, updated);
+  await logAdminAction('CREATE', 'document', newDoc.id, { title: newDoc.title });
+  return newDoc;
+}
+
+export async function updatePDFDocument(id: string, updates: Partial<PDFDocument>): Promise<PDFDocument> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('pdf_documents')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && data) {
+      await logAdminAction('UPDATE', 'document', id, updates);
+      return data;
+    }
+  }
+
+  const docs = await getPDFDocuments();
+  const index = docs.findIndex(d => d.id === id);
+  if (index === -1) throw new Error('Document not found');
+  const updatedDoc = { ...docs[index], ...updates };
+  docs[index] = updatedDoc;
+  setStoredData(STORAGE_KEYS.DOCUMENTS, docs);
+  await logAdminAction('UPDATE', 'document', id, updates);
+  return updatedDoc;
+}
+
+export async function deletePDFDocument(id: string): Promise<void> {
+  if (isSupabaseConfigured) {
+    await supabase.from('pdf_documents').delete().eq('id', id);
+  }
+  const docs = await getPDFDocuments();
+  const target = docs.find(d => d.id === id);
+  const filtered = docs.filter(d => d.id !== id);
+  setStoredData(STORAGE_KEYS.DOCUMENTS, filtered);
+  await logAdminAction('DELETE', 'document', id, { title: target?.title });
+}
+
+export async function incrementDocumentDownload(id: string): Promise<void> {
+  const docs = await getPDFDocuments();
+  const doc = docs.find(d => d.id === id);
+  if (doc) {
+    const newCount = (doc.downloads_count || 0) + 1;
+    if (isSupabaseConfigured) {
+      await supabase.from('pdf_documents').update({ downloads_count: newCount }).eq('id', id);
+    }
+    const updated = docs.map(d => d.id === id ? { ...d, downloads_count: newCount } : d);
+    setStoredData(STORAGE_KEYS.DOCUMENTS, updated);
+  }
+}
+

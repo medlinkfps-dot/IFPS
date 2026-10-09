@@ -4,7 +4,7 @@ import {
   ArrowLeft, 
   Calendar, 
   Clock, 
-  CreditCard, 
+  FileDown, 
   ShieldCheck, 
   Award, 
   BookOpen, 
@@ -55,7 +55,6 @@ export const HomePage: React.FC = () => {
   }, []);
 
   const emblemUrl = settings['official_emblem_url']?.value_ar || '/fps.png';
-  const idSystemUrl = settings['id_system_url']?.value_ar || 'https://id.iraqifps.org';
 
   return (
     <div className="space-y-12 sm:space-y-20 pb-16">
@@ -102,11 +101,11 @@ export const HomePage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Link
-                    to="/membership"
+                    to="/documents"
                     className="w-full sm:w-auto flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white font-bold px-6 py-3.5 rounded-2xl text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <CreditCard className="w-4 h-4" />
-                    <span>إصدار وتجديد الهويات المهنية</span>
+                    <FileDown className="w-4 h-4" />
+                    <span>تحميل الوثائق والاستمارات (PDF)</span>
                   </Link>
 
                   <Link
@@ -164,19 +163,17 @@ export const HomePage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Direct portal pill */}
-                  <a
-                    href={idSystemUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  {/* Direct documents pill */}
+                  <Link
+                    to="/documents"
                     className="flex items-center justify-between p-3 rounded-xl bg-medical-500/20 hover:bg-medical-500/30 text-white text-xs font-semibold border border-medical-500/30 transition-all"
                   >
                     <span className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-medical-400" />
-                      <span>التحقق من صحة الهوية الإلكترونية</span>
+                      <FileDown className="w-4 h-4 text-medical-400" />
+                      <span>تصفح وتحميل الوثائق الرسمية (PDF)</span>
                     </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-medical-300" />
-                  </a>
+                    <ArrowLeft className="w-3.5 h-3.5 text-medical-300" />
+                  </Link>
                 </div>
               </div>
 
@@ -274,25 +271,25 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 3: Membership & IDs */}
+          {/* Card 3: Documents & PDF Forms */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft hover:shadow-md transition-all group flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <CreditCard className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center">
+                <FileDown className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-navy-900 group-hover:text-medical-600 transition-colors">
-                العضوية والهويات المهنية
+                الوثائق والاستمارات الرسمية
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                إصدار وتجديد هويات الجمعية الذكية عبر المنصة الرقمية الموحدة مع خاصية التحقق الإلكتروني.
+                تحميل مباشر للأوامر الإدارية الوزارية، استمارات التسجيل، والأدلة السريرية المعتمدة بصيغة PDF.
               </p>
             </div>
             <div className="pt-6">
               <Link
-                to="/membership"
+                to="/documents"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 hover:text-medical-700"
               >
-                <span>دليل العضوية وشروطها</span>
+                <span>تصفح وتحميل ملفات PDF</span>
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             </div>
@@ -506,7 +503,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. IDENTITY SYSTEM DIRECT BANNER (Clean Institutional Callout) */}
+      {/* 6. OFFICIAL PDF DOCUMENTS & DOWNLOADS BANNER */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 text-white rounded-3xl p-6 sm:p-10 border border-navy-800 shadow-xl">
@@ -514,32 +511,30 @@ export const HomePage: React.FC = () => {
             
             <div className="lg:col-span-8 space-y-3 text-center lg:text-right">
               <span className="text-[11px] font-bold text-medical-300 uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full inline-block">
-                المنظومة الإلكترونية المركزية
+                المكتبة الرقمية المعتمدة
               </span>
               <h2 className="text-xl sm:text-3xl font-black text-white">
-                بوابة إصدار وتجديد الهويات (id.iraqifps.org)
+                مكتبة الوثائق والاستمارات الرسمية (PDF)
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-normal">
-                منصة رقمية موحدة لإدارة سجلات أعضاء الجمعية، تقديم طلبات الهوية الجديدة، وتجديد العضوية إلكترونياً وبأمان تام.
+                منصة مركزية لتحميل جميع الملفات الرسمية المعتمدة، استمارات التسجيل، الأوامر الإدارية الوزارية، والبروتوكولات السريرية لجمعية أطباء الأسرة العراقية.
               </p>
             </div>
 
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
-              <a
-                href={idSystemUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/documents"
                 className="flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition-all"
               >
-                <span>الدخول لمنصة الهويات</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
+                <FileDown className="w-4 h-4" />
+                <span>تصفح وتحميل الوثائق (PDF)</span>
+              </Link>
 
               <Link
-                to="/membership"
+                to="/contact"
                 className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 px-5 rounded-2xl text-xs font-semibold border border-white/10 transition-colors"
               >
-                <span>دليل الشروط والوثائق المطلوبة</span>
+                <span>طلب وثيقة رسمية مخصصة</span>
               </Link>
             </div>
 

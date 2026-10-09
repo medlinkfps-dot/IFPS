@@ -8,7 +8,8 @@ import {
   Facebook, 
   Instagram, 
   ExternalLink,
-  Award
+  Award,
+  FileDown
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
@@ -71,7 +72,7 @@ export const Footer: React.FC = () => {
                 <Link to="/opportunities" className="hover:text-white transition-colors">الدراسات العليا والزمالات</Link>
               </li>
               <li>
-                <Link to="/membership" className="hover:text-white transition-colors">العضوية وإصدار الهويات</Link>
+                <Link to="/documents" className="hover:text-white transition-colors">الوثائق والاستمارات (PDF)</Link>
               </li>
             </ul>
           </div>
@@ -83,15 +84,13 @@ export const Footer: React.FC = () => {
             </h4>
 
             <div className="space-y-2 text-xs">
-              <a 
-                href="https://id.iraqifps.org" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <Link 
+                to="/documents" 
                 className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5"
               >
-                <span>بوابة الهويات المركزية (id.iraqifps.org)</span>
-                <ExternalLink className="w-3.5 h-3.5 text-medical-400" />
-              </a>
+                <span>مكتبة الوثائق وتحميل الملفات (PDF)</span>
+                <FileDown className="w-3.5 h-3.5 text-medical-400" />
+              </Link>
 
               <div className="flex items-center gap-2 text-slate-400 pt-1">
                 <Mail className="w-3.5 h-3.5 text-medical-400 shrink-0" />
