@@ -160,8 +160,8 @@ export const INITIAL_SETTINGS: Record<string, SiteSetting> = {
   },
   president_name: {
     key: 'president_name',
-    value_ar: 'الطبيب الاستشاري د. منتظر سعد',
-    value_en: 'Consultant Dr. Muntadhar Saad',
+    value_ar: 'الطبيب الاستشاري  أ.م.د. منتظر سعد جابر',
+    value_en: 'Consultant Asst. Prof. Dr. Muntadhar Saad Jaber',
     description: 'اسم رئيس الجمعية',
     category: 'general',
     is_public: true,

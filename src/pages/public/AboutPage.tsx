@@ -131,7 +131,7 @@ export const AboutPage: React.FC = () => {
                   كلمة رئيس الجمعية
                 </h3>
                 <p className="text-xs text-medical-600 font-medium">
-                  الطبيب الاستشاري د. منتظر سعد — رئيس جمعية أطباء الأسرة العراقية
+                  الطبيب الاستشاري  أ.م.د. منتظر سعد جابر — رئيس الجمعية
                 </p>
               </div>
             </div>
