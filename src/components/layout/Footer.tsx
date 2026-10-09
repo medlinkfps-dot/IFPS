@@ -69,9 +69,6 @@ export const Footer: React.FC = () => {
                 <Link to="/events" className="hover:text-white transition-colors">المؤتمرات العلمية</Link>
               </li>
               <li>
-                <Link to="/opportunities" className="hover:text-white transition-colors">الدراسات العليا والزمالات</Link>
-              </li>
-              <li>
                 <Link to="/documents" className="hover:text-white transition-colors">الوثائق والاستمارات (PDF)</Link>
               </li>
             </ul>

@@ -140,8 +140,8 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Header Actions (Desktop) */}
-          <div className="hidden lg:flex items-center gap-2.5">
-            {user ? (
+          {user && (
+            <div className="hidden lg:flex items-center gap-2.5">
               <Link 
                 to="/admin/dashboard" 
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-navy-900 bg-slate-100 hover:bg-slate-200 transition-colors"
@@ -149,28 +149,11 @@ export const Navbar: React.FC = () => {
                 <LayoutDashboard className="w-3.5 h-3.5 text-medical-600" />
                 <span>لوحة الإدارة</span>
               </Link>
-            ) : null}
-
-            <Link
-              to="/documents"
-              className="flex items-center gap-2 bg-gradient-to-r from-medical-500 to-medical-600 hover:from-medical-600 hover:to-medical-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all hover:shadow hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <FileDown className="w-4 h-4" />
-              <span>الوثائق والاستمارات</span>
-            </Link>
-          </div>
+            </div>
+          )}
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Link
-              to="/documents"
-              className="p-2 rounded-xl text-medical-600 bg-medical-50 hover:bg-medical-100 transition-colors"
-              aria-label="الوثائق والاستمارات"
-              title="الوثائق والاستمارات الرسمية"
-            >
-              <FileDown className="w-5 h-5" />
-            </Link>
-
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2.5 rounded-xl text-slate-700 hover:text-navy-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-medical-500"
@@ -232,16 +215,8 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Footer CTAs */}
-          <div className="pt-6 border-t border-slate-100 space-y-2.5 mt-6">
-            <Link
-              to="/documents"
-              className="flex items-center justify-center gap-2 w-full bg-medical-500 hover:bg-medical-600 text-white py-3.5 rounded-2xl text-sm font-bold shadow-sm transition-all"
-            >
-              <FileDown className="w-4 h-4" />
-              <span>تحميل الوثائق والاستمارات (PDF)</span>
-            </Link>
-
-            <div className="pt-2 flex items-center justify-between text-xs text-slate-400 px-2">
+          <div className="pt-6 border-t border-slate-100 mt-6">
+            <div className="flex items-center justify-between text-xs text-slate-400 px-2">
               <a href="mailto:info@iraqifps.org" className="hover:text-navy-900">
                 info@iraqifps.org
               </a>

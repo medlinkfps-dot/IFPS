@@ -464,9 +464,12 @@ export async function getNavigationItems(): Promise<NavigationItem[]> {
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
-    if (!error && data && data.length > 0) return data;
+    if (!error && data && data.length > 0) {
+      return data.filter(item => item.path !== '/opportunities');
+    }
   }
-  return getStoredData<NavigationItem[]>(STORAGE_KEYS.NAVIGATION, INITIAL_NAVIGATION);
+  const items = getStoredData<NavigationItem[]>(STORAGE_KEYS.NAVIGATION, INITIAL_NAVIGATION);
+  return items.filter(item => item.is_active && item.path !== '/opportunities');
 }
 
 export async function saveNavigationItems(items: NavigationItem[]): Promise<NavigationItem[]> {

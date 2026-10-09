@@ -238,7 +238,7 @@ export const INITIAL_NAVIGATION: NavigationItem[] = [
   { id: 'nav-3', label_ar: 'الأخبار', label_en: 'News', path: '/news', is_external: false, sort_order: 3, is_active: true },
   { id: 'nav-4', label_ar: 'الفعاليات والمؤتمرات', label_en: 'Events', path: '/events', is_external: false, sort_order: 4, is_active: true },
   { id: 'nav-5', label_ar: 'الدورات والورش', label_en: 'Courses', path: '/courses', is_external: false, sort_order: 5, is_active: true },
-  { id: 'nav-6', label_ar: 'الدراسات العليا', label_en: 'Postgraduate', path: '/opportunities', is_external: false, sort_order: 6, is_active: true },
+  { id: 'nav-6', label_ar: 'الدراسات العليا', label_en: 'Postgraduate', path: '/opportunities', is_external: false, sort_order: 6, is_active: false },
   { id: 'nav-7', label_ar: 'الوثائق والاستمارات', label_en: 'Documents & Forms', path: '/documents', is_external: false, sort_order: 7, is_active: true },
   { id: 'nav-8', label_ar: 'اتصل بنا', label_en: 'Contact', path: '/contact', is_external: false, sort_order: 8, is_active: true },
 ];

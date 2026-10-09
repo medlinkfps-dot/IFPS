@@ -4,7 +4,6 @@ import {
   ArrowLeft, 
   Calendar, 
   Clock, 
-  FileDown, 
   ShieldCheck, 
   Award, 
   BookOpen, 
@@ -101,19 +100,19 @@ export const HomePage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                   <Link
-                    to="/documents"
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white font-bold px-6 py-3.5 rounded-2xl text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    <span>تحميل الوثائق والاستمارات (PDF)</span>
-                  </Link>
-
-                  <Link
                     to="/about"
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-semibold px-5 py-3.5 rounded-2xl text-sm border border-white/10 transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white font-bold px-6 py-3.5 rounded-2xl text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <span>عن الجمعية ورسالتها</span>
                     <ChevronLeft className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    to="/courses"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-semibold px-5 py-3.5 rounded-2xl text-sm border border-white/10 transition-colors"
+                  >
+                    <GraduationCap className="w-4 h-4 text-medical-300" />
+                    <span>دورات منظومة CPD-s</span>
                   </Link>
                 </div>
 
@@ -154,7 +153,7 @@ export const HomePage: React.FC = () => {
                     Iraqi Family Physicians Society • IFPS
                   </p>
 
-                  <div className="bg-navy-950/60 rounded-2xl p-4 border border-white/10 text-right space-y-2 mb-4">
+                  <div className="bg-navy-950/60 rounded-2xl p-4 border border-white/10 text-right space-y-2">
                     <div className="text-xs text-slate-200 leading-relaxed font-light">
                       "طبيب الأسرة هو خط الدفاع الأول والشريك الدائم لصحة الفرد والعائلة في كل مراحل الحياة."
                     </div>
@@ -162,18 +161,6 @@ export const HomePage: React.FC = () => {
                       الطبيب الاستشاري د. منتظر سعد — رئيس الجمعية
                     </div>
                   </div>
-
-                  {/* Direct documents pill */}
-                  <Link
-                    to="/documents"
-                    className="flex items-center justify-between p-3 rounded-xl bg-medical-500/20 hover:bg-medical-500/30 text-white text-xs font-semibold border border-medical-500/30 transition-all"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileDown className="w-4 h-4 text-medical-400" />
-                      <span>تصفح وتحميل الوثائق الرسمية (PDF)</span>
-                    </span>
-                    <ArrowLeft className="w-3.5 h-3.5 text-medical-300" />
-                  </Link>
                 </div>
               </div>
 
@@ -271,25 +258,25 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 3: Documents & PDF Forms */}
+          {/* Card 3: Global Representation & Partnerships */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-soft hover:shadow-md transition-all group flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center">
-                <FileDown className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                <Globe className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-navy-900 group-hover:text-medical-600 transition-colors">
-                الوثائق والاستمارات الرسمية
+                التمثيل والشراكات الدولية
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                تحميل مباشر للأوامر الإدارية الوزارية، استمارات التسجيل، والأدلة السريرية المعتمدة بصيغة PDF.
+                عضوية معتمدة في المنظمة العالمية لأطباء الأسرة (WONCA) لربط الخبرات العراقية بالمعايير السريرية الدولية.
               </p>
             </div>
             <div className="pt-6">
               <Link
-                to="/documents"
+                to="/about"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-medical-600 hover:text-medical-700"
               >
-                <span>تصفح وتحميل ملفات PDF</span>
+                <span>عن الشراكات والتمثيل</span>
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             </div>
@@ -503,7 +490,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. OFFICIAL PDF DOCUMENTS & DOWNLOADS BANNER */}
+      {/* 6. INSTITUTIONAL COMMUNICATION & HEADQUARTERS BANNER */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 text-white rounded-3xl p-6 sm:p-10 border border-navy-800 shadow-xl">
@@ -511,30 +498,30 @@ export const HomePage: React.FC = () => {
             
             <div className="lg:col-span-8 space-y-3 text-center lg:text-right">
               <span className="text-[11px] font-bold text-medical-300 uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full inline-block">
-                المكتبة الرقمية المعتمدة
+                الأمانة العامة والتواصل المؤسسي
               </span>
               <h2 className="text-xl sm:text-3xl font-black text-white">
-                مكتبة الوثائق والاستمارات الرسمية (PDF)
+                جمعية أطباء الأسرة العراقية — المقر العام في بغداد
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-normal">
-                منصة مركزية لتحميل جميع الملفات الرسمية المعتمدة، استمارات التسجيل، الأوامر الإدارية الوزارية، والبروتوكولات السريرية لجمعية أطباء الأسرة العراقية.
+                نرحب بتواصل كافة الزملاء والكوادر الصحية والمؤسسات الأكاديمية لتنسيق الفعاليات العلمية والمبادرات المهنية المشتركة نحو تطوير الرعاية الصحية الأولية.
               </p>
             </div>
 
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
               <Link
-                to="/documents"
+                to="/contact"
                 className="flex items-center justify-center gap-2 bg-medical-500 hover:bg-medical-600 text-white py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition-all"
               >
-                <FileDown className="w-4 h-4" />
-                <span>تصفح وتحميل الوثائق (PDF)</span>
+                <span>تواصل معنا</span>
+                <ChevronLeft className="w-4 h-4" />
               </Link>
 
               <Link
-                to="/contact"
+                to="/about"
                 className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 px-5 rounded-2xl text-xs font-semibold border border-white/10 transition-colors"
               >
-                <span>طلب وثيقة رسمية مخصصة</span>
+                <span>عن الجمعية وأهدافها</span>
               </Link>
             </div>
 
