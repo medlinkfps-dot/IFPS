@@ -33,7 +33,7 @@ export const AdminDashboardPage: React.FC = () => {
     async function loadStats() {
       try {
         const [postsRes, msgs, types, docs] = await Promise.all([
-          getPosts({ limit: 100 }),
+          getPosts({ limit: 100, includeAllStatuses: true }),
           getContactMessages(),
           getContentTypes(),
           getPDFDocuments(),

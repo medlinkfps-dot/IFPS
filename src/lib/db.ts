@@ -2,7 +2,8 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { 
   getBlobStore, 
   saveBlobStore, 
-  isBlobConfigured 
+  isBlobConfigured,
+  BlobStoreData 
 } from './blobStorage';
 import { 
   Post, 
@@ -19,7 +20,7 @@ import {
   INITIAL_CATEGORIES, 
   INITIAL_POSTS, 
   INITIAL_SETTINGS, 
-  INITIAL_NAVIGATION,
+  INITIAL_NAVIGATION, 
   INITIAL_DOCUMENTS
 } from './mockData';
 
@@ -34,6 +35,32 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'ifps_audit_logs_store',
   DOCUMENTS: 'ifps_documents_store',
 };
+
+// Helper to append audit logs atomically to store before cloud save
+function appendAuditLog(
+  store: BlobStoreData,
+  action: AuditLog['action'], 
+  entity_type: AuditLog['entity_type'], 
+  entity_id?: string, 
+  details?: any
+): void {
+  const log: AuditLog = {
+    id: `log-${Date.now()}`,
+    admin_email: 'admin@iraqifps.org',
+    action,
+    entity_type,
+    entity_id,
+    details,
+    created_at: new Date().toISOString(),
+  };
+  if (!Array.isArray(store.audit_logs)) {
+    store.audit_logs = [];
+  }
+  store.audit_logs.unshift(log);
+  if (store.audit_logs.length > 200) {
+    store.audit_logs.pop();
+  }
+}
 
 // Helper to broadcast changes across open pages and components
 export function broadcastContentUpdate(entityType?: string): void {
@@ -108,10 +135,11 @@ export async function createContentType(type: Omit<ContentType, 'id'>): Promise<
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     store.content_types.push(newType);
+    appendAuditLog(store, 'CREATE', 'section', newType.id, { name: newType.name_ar });
     await saveBlobStore(store);
-    await logAdminAction('CREATE', 'section', newType.id, { name: newType.name_ar });
+    broadcastContentUpdate('sections');
     return newType;
   }
 
@@ -134,12 +162,13 @@ export async function updateContentType(id: string, updates: Partial<ContentType
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     const index = store.content_types.findIndex(t => t.id === id);
     if (index !== -1) {
       store.content_types[index] = { ...store.content_types[index], ...updates };
+      appendAuditLog(store, 'UPDATE', 'section', id, updates);
       await saveBlobStore(store);
-      await logAdminAction('UPDATE', 'section', id, updates);
+      broadcastContentUpdate('sections');
       return store.content_types[index];
     }
   }
@@ -200,10 +229,11 @@ export async function createCategory(category: Omit<Category, 'id'>): Promise<Ca
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     store.categories.push(newCat);
+    appendAuditLog(store, 'CREATE', 'category', newCat.id, { name: newCat.name_ar });
     await saveBlobStore(store);
-    await logAdminAction('CREATE', 'category', newCat.id, { name: newCat.name_ar });
+    broadcastContentUpdate('categories');
     return newCat;
   }
 
@@ -220,6 +250,7 @@ export async function createCategory(category: Omit<Category, 'id'>): Promise<Ca
 export interface GetPostsOptions {
   contentTypeSlug?: string;
   status?: string;
+  includeAllStatuses?: boolean;
   search?: string;
   limit?: number;
   offset?: number;
@@ -227,7 +258,7 @@ export interface GetPostsOptions {
 }
 
 export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: Post[]; total: number }> {
-  const { contentTypeSlug, status, search, limit = 50, offset = 0, isFeatured } = options;
+  const { contentTypeSlug, status, includeAllStatuses, search, limit = 50, offset = 0, isFeatured } = options;
 
   if (isSupabaseConfigured) {
     let query = supabase
@@ -237,12 +268,12 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
         content_types!inner (slug, name_ar)
       `, { count: 'exact' });
 
-    if (contentTypeSlug) {
+    if (contentTypeSlug && contentTypeSlug !== 'all') {
       query = query.eq('content_types.slug', contentTypeSlug);
     }
-    if (status) {
+    if (status && status !== 'all') {
       query = query.eq('status', status);
-    } else {
+    } else if (!status && !includeAllStatuses) {
       query = query.eq('status', 'published').is('deleted_at', null);
     }
     if (isFeatured !== undefined) {
@@ -279,12 +310,12 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
   // Filter by soft delete
   all = all.filter(p => !p.deleted_at);
 
-  if (contentTypeSlug) {
+  if (contentTypeSlug && contentTypeSlug !== 'all') {
     all = all.filter(p => p.content_type_slug === contentTypeSlug);
   }
-  if (status) {
+  if (status && status !== 'all') {
     all = all.filter(p => p.status === status);
-  } else {
+  } else if (!status && !includeAllStatuses) {
     all = all.filter(p => p.status === 'published');
   }
   if (isFeatured !== undefined) {
@@ -330,8 +361,12 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
-    const found = store.posts.find(p => p.slug === slug && !p.deleted_at);
+    let store = await getBlobStore();
+    let found = store.posts.find(p => p.slug === slug && !p.deleted_at);
+    if (!found) {
+      store = await getBlobStore(true);
+      found = store.posts.find(p => p.slug === slug && !p.deleted_at);
+    }
     return found || null;
   }
 
@@ -358,8 +393,13 @@ export async function getPostById(id: string): Promise<Post | null> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
-    return store.posts.find(p => p.id === id) || null;
+    let store = await getBlobStore();
+    let found = store.posts.find(p => p.id === id);
+    if (!found) {
+      store = await getBlobStore(true);
+      found = store.posts.find(p => p.id === id);
+    }
+    return found || null;
   }
 
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
@@ -431,8 +471,8 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
   if (isBlobConfigured) {
     const store = await getBlobStore(true);
     store.posts.unshift(newPost);
+    appendAuditLog(store, 'CREATE', 'post', newPost.id, { title: newPost.title_ar });
     await saveBlobStore(store);
-    await logAdminAction('CREATE', 'post', newPost.id, { title: newPost.title_ar });
     broadcastContentUpdate('posts');
     return newPost;
   }
@@ -482,8 +522,8 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
     const index = store.posts.findIndex(p => p.id === id);
     if (index !== -1) {
       store.posts[index] = { ...store.posts[index], ...cleanUpdates };
+      appendAuditLog(store, 'UPDATE', 'post', id, { title: store.posts[index].title_ar });
       await saveBlobStore(store);
-      await logAdminAction('UPDATE', 'post', id, { title: store.posts[index].title_ar });
       broadcastContentUpdate('posts');
       return store.posts[index];
     }
@@ -515,14 +555,14 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
 
   if (isBlobConfigured) {
     const store = await getBlobStore(true);
+    const target = store.posts.find(x => x.id === id);
     if (softDelete) {
-      const p = store.posts.find(x => x.id === id);
-      if (p) p.deleted_at = new Date().toISOString();
+      if (target) target.deleted_at = new Date().toISOString();
     } else {
       store.posts = store.posts.filter(x => x.id !== id);
     }
+    appendAuditLog(store, 'DELETE', 'post', id, { title: target?.title_ar });
     await saveBlobStore(store);
-    await logAdminAction('DELETE', 'post', id);
     broadcastContentUpdate('posts');
     return;
   }
@@ -576,7 +616,7 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     const updated: SiteSetting = {
       key,
       value_ar,
@@ -587,8 +627,9 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
       updated_at: new Date().toISOString(),
     };
     store.settings[key] = updated;
+    appendAuditLog(store, 'SETTINGS_UPDATE', 'setting', key, { value_ar });
     await saveBlobStore(store);
-    await logAdminAction('SETTINGS_UPDATE', 'setting', key, { value_ar });
+    broadcastContentUpdate('settings');
     return updated;
   }
 
@@ -640,10 +681,11 @@ export async function saveNavigationItems(items: NavigationItem[]): Promise<Navi
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     store.navigation = items;
+    appendAuditLog(store, 'UPDATE', 'setting', 'navigation', { count: items.length });
     await saveBlobStore(store);
-    await logAdminAction('UPDATE', 'setting', 'navigation', { count: items.length });
+    broadcastContentUpdate('navigation');
     return items;
   }
 
@@ -766,8 +808,7 @@ export async function logAdminAction(
 
   if (isBlobConfigured) {
     const store = await getBlobStore();
-    store.audit_logs.unshift(log);
-    if (store.audit_logs.length > 200) store.audit_logs.pop();
+    appendAuditLog(store, action, entity_type, entity_id, details);
     await saveBlobStore(store);
     return;
   }
@@ -839,10 +880,11 @@ export async function createPDFDocument(doc: Omit<PDFDocument, 'id' | 'created_a
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     store.documents.unshift(newDoc);
+    appendAuditLog(store, 'CREATE', 'document', newDoc.id, { title: newDoc.title });
     await saveBlobStore(store);
-    await logAdminAction('CREATE', 'document', newDoc.id, { title: newDoc.title });
+    broadcastContentUpdate('documents');
     return newDoc;
   }
 
@@ -868,12 +910,13 @@ export async function updatePDFDocument(id: string, updates: Partial<PDFDocument
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     const index = store.documents.findIndex(d => d.id === id);
     if (index !== -1) {
       store.documents[index] = { ...store.documents[index], ...updates };
+      appendAuditLog(store, 'UPDATE', 'document', id, updates);
       await saveBlobStore(store);
-      await logAdminAction('UPDATE', 'document', id, updates);
+      broadcastContentUpdate('documents');
       return store.documents[index];
     }
   }
@@ -894,11 +937,12 @@ export async function deletePDFDocument(id: string): Promise<void> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     const target = store.documents.find(d => d.id === id);
     store.documents = store.documents.filter(d => d.id !== id);
+    appendAuditLog(store, 'DELETE', 'document', id, { title: target?.title });
     await saveBlobStore(store);
-    await logAdminAction('DELETE', 'document', id, { title: target?.title });
+    broadcastContentUpdate('documents');
     return;
   }
 

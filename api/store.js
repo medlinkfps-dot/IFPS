@@ -1,13 +1,15 @@
 // Vercel Serverless Function to manage IFPS central store on Vercel Blob
 // Protected with server-side HMAC authorization, rate limiting, and zero-latency reads.
 
+import { get, put } from '@vercel/blob';
 import {
   getClientIp,
   checkRateLimit,
   verifyAdminToken,
 } from './_auth_util.js';
 
-let serverCache = null;
+let lastSavedPayload = null;
+let lastSavedTimestamp = 0;
 
 export default async function handler(req, res) {
   // CORS & Security headers
@@ -22,7 +24,7 @@ export default async function handler(req, res) {
   const ip = getClientIp(req);
 
   // Rate Limiting check
-  const maxReqs = (req.method === 'GET' ? 120 : 25);
+  const maxReqs = (req.method === 'GET' ? 200 : 60);
   const rateLimit = checkRateLimit(ip, maxReqs, 60);
   if (!rateLimit.allowed) {
     return res.status(429).json({
@@ -34,9 +36,8 @@ export default async function handler(req, res) {
     process.env.BLOB_READ_WRITE_TOKEN || 
     'vercel_blob_rw_A53IpJjUTe4iXwXY_DtqKr9S6wORYyr3M0gPMm78SJ26WTE';
 
-  // ?download=1 forces origin fetch and bypasses edge caching completely
-  const BLOB_FETCH_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json?download=1';
-  const BLOB_PUT_API = 'https://blob.vercel-storage.com/ifps_store.json';
+  const STORE_PATHNAME = 'ifps_store.json';
+  const STORE_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json';
 
   // Always disable caching on the API endpoint so updates are instant globally
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
@@ -46,38 +47,40 @@ export default async function handler(req, res) {
   res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
 
   // -------------------------------------------------------------------------
-  // GET: Public read-only access (with rate limiting and origin freshness)
+  // GET: Public read-only access directly from Vercel Blob SDK (Zero CDN Cache)
   // -------------------------------------------------------------------------
   if (req.method === 'GET') {
     try {
-      const response = await fetch(`${BLOB_FETCH_URL}&_nocache=${Date.now()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        cache: 'no-store',
+      const blobResult = await get(STORE_URL, {
+        token,
+        access: 'private',
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // If serverCache is newer than blob response, prefer serverCache
-        if (serverCache && serverCache.last_updated && (!data.last_updated || new Date(serverCache.last_updated) > new Date(data.last_updated))) {
-          return res.status(200).json(serverCache);
+      if (blobResult && blobResult.stream) {
+        const data = await new Response(blobResult.stream).json();
+
+        // Monotonic check: prefer recently saved payload if cloud replica is momentarily lagging
+        if (
+          lastSavedPayload && 
+          lastSavedPayload.last_updated && 
+          new Date(lastSavedPayload.last_updated).getTime() > new Date(data.last_updated || 0).getTime()
+        ) {
+          return res.status(200).json(lastSavedPayload);
         }
-        serverCache = data;
+
         return res.status(200).json(data);
       }
 
-      if (serverCache) {
-        return res.status(200).json(serverCache);
+      if (lastSavedPayload) {
+        return res.status(200).json(lastSavedPayload);
       }
 
-      return res.status(response.status).json({ 
-        error: 'Failed to read store from Vercel Blob',
-        status: response.status 
-      });
+      return res.status(404).json({ error: 'Store blob not found' });
     } catch (err) {
-      if (serverCache) return res.status(200).json(serverCache);
-      console.error('Error fetching store from Vercel Blob:', err);
+      if (lastSavedPayload) {
+        return res.status(200).json(lastSavedPayload);
+      }
+      console.error('Error fetching store from Vercel Blob SDK:', err);
       return res.status(500).json({ error: 'Server error reading store', details: err.message });
     }
   }
@@ -111,7 +114,7 @@ export default async function handler(req, res) {
       if (typeof payload === 'string') {
         try {
           payload = JSON.parse(payload);
-        } catch (e) {
+        } catch {
           return res.status(400).json({ error: 'Invalid JSON body' });
         }
       }
@@ -121,38 +124,24 @@ export default async function handler(req, res) {
       }
 
       payload.last_updated = new Date().toISOString();
-      serverCache = payload;
+      lastSavedPayload = payload;
+      lastSavedTimestamp = Date.now();
 
-      const blobRes = await fetch(BLOB_PUT_API, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-api-version': '7',
-          'x-vercel-blob-access': 'private',
-          'x-add-random-suffix': '0',
-          'x-allow-overwrite': '1',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const blobResult = await put(STORE_PATHNAME, JSON.stringify(payload), {
+        access: 'private',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        token,
+        contentType: 'application/json',
       });
 
-      if (!blobRes.ok) {
-        const errText = await blobRes.text();
-        console.error('Blob PUT error:', blobRes.status, errText);
-        return res.status(blobRes.status).json({ 
-          error: 'Failed to save to Vercel Blob', 
-          details: errText 
-        });
-      }
-
-      const result = await blobRes.json();
       return res.status(200).json({
         success: true,
         last_updated: payload.last_updated,
-        result
+        result: blobResult
       });
     } catch (err) {
-      console.error('Error saving store to Vercel Blob:', err);
+      console.error('Error saving store to Vercel Blob SDK:', err);
       return res.status(500).json({ error: 'Server error saving store', details: err.message });
     }
   }

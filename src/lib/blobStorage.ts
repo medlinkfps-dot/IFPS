@@ -39,7 +39,7 @@ export interface BlobStoreData {
 export function getDefaultStoreData(): BlobStoreData {
   return {
     version: 1,
-    last_updated: new Date().toISOString(),
+    last_updated: '1970-01-01T00:00:00.000Z',
     posts: [...INITIAL_POSTS],
     settings: { ...INITIAL_SETTINGS },
     content_types: [...INITIAL_CONTENT_TYPES],
@@ -53,6 +53,8 @@ export function getDefaultStoreData(): BlobStoreData {
 
 let inMemoryStore: BlobStoreData | null = null;
 let activeFetchPromise: Promise<BlobStoreData> | null = null;
+let initialCloudFetchDone = false;
+let lastLocalSaveTime = 0;
 
 // Read cached store from localStorage if available
 function getLocalCache(): BlobStoreData {
@@ -85,17 +87,19 @@ function setLocalCache(data: BlobStoreData) {
 
 /**
  * Loads the central cloud store.
- * Fetches from /api/store with cache-busting, falling back to local cache if offline.
+ * Fetches directly from /api/store to guarantee fresh content from Vercel Blob.
+ * If forceFresh is true or initialCloudFetchDone is false, always fetches from network.
  */
 export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
   const cached = getLocalCache();
 
-  // If memory store exists and not forcing fresh, return instantly and sync in background
-  if (!forceFresh && inMemoryStore && inMemoryStore.posts && inMemoryStore.posts.length > 0) {
-    syncFromCloudInBackground();
+  // If memory store exists, initial cloud fetch is already done, and not forcing fresh, return memory store
+  if (!forceFresh && inMemoryStore && initialCloudFetchDone) {
+    scheduleBackgroundSync();
     return inMemoryStore;
   }
 
+  // De-duplicate concurrent network requests
   if (activeFetchPromise) {
     return activeFetchPromise;
   }
@@ -110,8 +114,14 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
       if (apiRes && apiRes.ok) {
         const cloudData = await apiRes.json();
         if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
-          setLocalCache(cloudData);
-          return cloudData;
+          initialCloudFetchDone = true;
+          // Protect recent local saves from being overwritten by older cloud responses
+          if (Date.now() - lastLocalSaveTime > 10000) {
+            setLocalCache(cloudData);
+            return cloudData;
+          } else if (inMemoryStore) {
+            return inMemoryStore;
+          }
         }
       }
 
@@ -127,11 +137,14 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
   return activeFetchPromise;
 }
 
-let backgroundSyncTimeout: any = null;
-function syncFromCloudInBackground() {
-  if (backgroundSyncTimeout) return;
-  backgroundSyncTimeout = setTimeout(async () => {
-    backgroundSyncTimeout = null;
+let backgroundSyncTimer: any = null;
+function scheduleBackgroundSync() {
+  if (backgroundSyncTimer) return;
+  backgroundSyncTimer = setTimeout(async () => {
+    backgroundSyncTimer = null;
+    // Don't run background sync if admin recently saved
+    if (Date.now() - lastLocalSaveTime < 10000) return;
+
     try {
       const apiRes = await fetch(`/api/store?_t=${Date.now()}`, {
         cache: 'no-store',
@@ -140,7 +153,11 @@ function syncFromCloudInBackground() {
       if (apiRes && apiRes.ok) {
         const cloudData = await apiRes.json();
         if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
-          if (!inMemoryStore || cloudData.last_updated !== inMemoryStore.last_updated) {
+          const cloudTime = new Date(cloudData.last_updated || 0).getTime();
+          const localTime = inMemoryStore ? new Date(inMemoryStore.last_updated || 0).getTime() : 0;
+          
+          // CRITICAL: Only overwrite local store if cloud is STRICTLY NEWER
+          if (cloudTime > localTime) {
             setLocalCache(cloudData);
             if (typeof window !== 'undefined') {
               window.dispatchEvent(
@@ -153,7 +170,7 @@ function syncFromCloudInBackground() {
     } catch {
       // Quiet background failure
     }
-  }, 300);
+  }, 1000);
 }
 
 /**
@@ -182,6 +199,7 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
       const resJson = await apiRes.json();
       if (resJson.last_updated) {
         data.last_updated = resJson.last_updated;
+        setLocalCache(data);
       }
       return true;
     }
@@ -201,8 +219,11 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
  * Saves modifications to both local cache and cloud Vercel Blob.
  * Awaits server sync to ensure changes are permanently stored on cloud before resolving.
  */
-export async function saveBlobStore(data: BlobStoreData): Promise<void> {
-  data.last_updated = new Date().toISOString();
+export async function saveBlobStore(data: BlobStoreData): Promise<boolean> {
+  const now = new Date().toISOString();
+  data.last_updated = now;
+  lastLocalSaveTime = Date.now();
+  initialCloudFetchDone = true;
   setLocalCache(data);
 
   // Broadcast update immediately to open UI components in the current tab
@@ -218,5 +239,7 @@ export async function saveBlobStore(data: BlobStoreData): Promise<void> {
   const saved = await pushBlobStoreToCloud(data);
   if (!saved) {
     console.warn('Notice: Cloud save did not complete or requires admin authentication.');
+    return false;
   }
+  return true;
 }

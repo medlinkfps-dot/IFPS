@@ -40,6 +40,7 @@ export const AdminPostsPage: React.FC = () => {
         getPosts({
           contentTypeSlug: selectedType !== 'all' ? selectedType : undefined,
           status: selectedStatus !== 'all' ? selectedStatus : undefined,
+          includeAllStatuses: selectedStatus === 'all',
           search: search || undefined,
           limit: 100,
         }),
