@@ -16,18 +16,12 @@ import {
   INITIAL_NAVIGATION, 
   INITIAL_DOCUMENTS 
 } from './mockData';
+import { getAdminToken } from './auth';
 
-export const BLOB_READ_WRITE_TOKEN = 
-  import.meta.env.VITE_BLOB_READ_WRITE_TOKEN || 
-  'vercel_blob_rw_A53IpJjUTe4iXwXY_DtqKr9S6wORYyr3M0gPMm78SJ26WTE';
-
-export const isBlobConfigured = Boolean(
-  BLOB_READ_WRITE_TOKEN && 
-  BLOB_READ_WRITE_TOKEN.startsWith('vercel_blob_')
-);
+// Cloud store is active via same-origin Serverless API (/api/store)
+export const isBlobConfigured = true;
 
 const LOCAL_STORAGE_BACKUP_KEY = 'ifps_blob_cache_store';
-const BLOB_DIRECT_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json?download=1';
 
 export interface BlobStoreData {
   version: number;
@@ -91,15 +85,10 @@ function setLocalCache(data: BlobStoreData) {
 
 /**
  * Loads the central cloud store.
- * Always attempts a fresh fetch from /api/store (with fallback to direct blob GET),
- * falling back to local cache if offline.
+ * Fetches from /api/store with cache-busting, falling back to local cache if offline.
  */
 export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
   const cached = getLocalCache();
-
-  if (!isBlobConfigured) {
-    return cached;
-  }
 
   // If memory store exists and not forcing fresh, return instantly and sync in background
   if (!forceFresh && inMemoryStore && inMemoryStore.posts && inMemoryStore.posts.length > 0) {
@@ -113,7 +102,6 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
 
   activeFetchPromise = (async () => {
     try {
-      // 1. Try our same-origin Serverless API route first (no CORS, no CDN stale cache)
       const apiRes = await fetch(`/api/store?_t=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
@@ -127,25 +115,9 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
         }
       }
 
-      // 2. Fallback to direct private blob GET with auth header
-      const directRes = await fetch(`${BLOB_DIRECT_URL}?_nocache=${Date.now()}`, {
-        headers: {
-          'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-        },
-        cache: 'no-store',
-      }).catch(() => null);
-
-      if (directRes && directRes.ok) {
-        const cloudData = await directRes.json();
-        if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
-          setLocalCache(cloudData);
-          return cloudData;
-        }
-      }
-
       return cached;
     } catch (err) {
-      console.warn('Network error reading from Vercel Blob, using cached store:', err);
+      console.warn('Network error reading store, using cached store:', err);
       return cached;
     } finally {
       activeFetchPromise = null;
@@ -161,57 +133,48 @@ function syncFromCloudInBackground() {
   backgroundSyncTimeout = setTimeout(async () => {
     backgroundSyncTimeout = null;
     try {
-      let cloudData: BlobStoreData | null = null;
-
-      // Try serverless API
       const apiRes = await fetch(`/api/store?_t=${Date.now()}`, {
         cache: 'no-store',
       }).catch(() => null);
 
       if (apiRes && apiRes.ok) {
-        cloudData = await apiRes.json();
-      } else {
-        // Fallback to direct GET
-        const directRes = await fetch(`${BLOB_DIRECT_URL}?_nocache=${Date.now()}`, {
-          headers: {
-            'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-          },
-          cache: 'no-store',
-        }).catch(() => null);
-        if (directRes && directRes.ok) {
-          cloudData = await directRes.json();
-        }
-      }
-
-      if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
-        if (!inMemoryStore || cloudData.last_updated !== inMemoryStore.last_updated) {
-          setLocalCache(cloudData);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-              new CustomEvent('ifps_content_updated', { detail: { source: 'cloud_sync' } })
-            );
+        const cloudData = await apiRes.json();
+        if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
+          if (!inMemoryStore || cloudData.last_updated !== inMemoryStore.last_updated) {
+            setLocalCache(cloudData);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('ifps_content_updated', { detail: { source: 'cloud_sync' } })
+              );
+            }
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Quiet background failure
     }
   }, 300);
 }
 
 /**
- * Pushes full store payload to Vercel Blob cloud.
- * Uses /api/store on the server to prevent CORS and authorization preflight issues.
+ * Pushes full store payload to cloud via /api/store.
+ * Authenticates using cryptographically signed admin token.
  */
 async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
-  if (!isBlobConfigured) return false;
   try {
-    // 1. Send to serverless API endpoint
+    const adminToken = getAdminToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+      headers['x-admin-token'] = adminToken;
+    }
+
     const apiRes = await fetch('/api/store', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     }).catch(() => null);
 
@@ -223,23 +186,13 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
       return true;
     }
 
-    // 2. Direct PUT fallback (for node/server-side scripts)
-    const directRes = await fetch('https://blob.vercel-storage.com/ifps_store.json', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-        'x-api-version': '7',
-        'x-vercel-blob-access': 'private',
-        'x-add-random-suffix': '0',
-        'x-allow-overwrite': '1',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }).catch(() => null);
+    if (apiRes && apiRes.status === 401) {
+      console.error('Unauthorized: Admin session expired or missing token.');
+    }
 
-    return Boolean(directRes && directRes.ok);
+    return false;
   } catch (err) {
-    console.error('Failed to write to Vercel Blob:', err);
+    console.error('Failed to write to store API:', err);
     return false;
   }
 }
@@ -261,42 +214,9 @@ export async function saveBlobStore(data: BlobStoreData): Promise<void> {
     );
   }
 
-  // Push to Vercel Blob
+  // Push to Serverless API
   const saved = await pushBlobStoreToCloud(data);
   if (!saved) {
-    console.warn('Warning: Cloud save did not return OK, changes kept in local cache.');
+    console.warn('Notice: Cloud save did not complete or requires admin authentication.');
   }
-}
-
-/**
- * Uploads a file (image or PDF) directly to Vercel Blob.
- */
-export async function uploadFileToVercelBlob(file: File): Promise<string | null> {
-  if (!isBlobConfigured) return null;
-  try {
-    const ext = file.name.split('.').pop() || 'bin';
-    const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const path = `uploads/${Date.now()}-${cleanName}.${ext}`;
-
-    const res = await fetch(`https://blob.vercel-storage.com/${path}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-        'x-api-version': '7',
-        'x-vercel-blob-access': 'private',
-        'x-add-random-suffix': '0',
-        'x-allow-overwrite': '1',
-        'Content-Type': file.type || 'application/octet-stream',
-      },
-      body: file,
-    });
-
-    if (res.ok) {
-      const result = await res.json();
-      return result.url;
-    }
-  } catch (e) {
-    console.error('Error uploading file to Vercel Blob:', e);
-  }
-  return null;
 }

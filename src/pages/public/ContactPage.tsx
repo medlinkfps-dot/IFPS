@@ -39,10 +39,18 @@ export const ContactPage: React.FC = () => {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    // Cooldown rate-limit check (SEC-05)
+    const lastSubmitTime = localStorage.getItem('ifps_last_contact_submit');
+    if (lastSubmitTime && Date.now() - parseInt(lastSubmitTime, 10) < 60000) {
+      const waitSeconds = Math.ceil((60000 - (Date.now() - parseInt(lastSubmitTime, 10))) / 1000);
       setStatus('error');
-      setErrorMessage('يرجى إدخال عنوان بريد إلكتروني صحيح.');
+      setErrorMessage(`يرجى الانتظار ${waitSeconds} ثانية قبل إرسال رسالة جديدة لحماية النظام من الإغراق.`);
+      return;
+    }
+
+    if (formData.message.length > 3000) {
+      setStatus('error');
+      setErrorMessage('نص الرسالة طويل جداً، الحد الأقصى المسموح به هو 3000 حرف.');
       return;
     }
 
@@ -57,6 +65,7 @@ export const ContactPage: React.FC = () => {
       });
 
       setStatus('success');
+      localStorage.setItem('ifps_last_contact_submit', Date.now().toString());
       setFormData({
         fullName: '',
         email: '',

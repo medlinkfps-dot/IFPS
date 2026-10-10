@@ -1,5 +1,11 @@
 // Vercel Serverless Function to manage IFPS central store on Vercel Blob
-// Uses downloadUrl (?download=1) to guarantee fresh reads without edge cache delay.
+// Protected with server-side HMAC authorization, rate limiting, and zero-latency reads.
+
+import {
+  getClientIp,
+  checkRateLimit,
+  verifyAdminToken,
+} from './_auth_util.js';
 
 let serverCache = null;
 
@@ -7,15 +13,25 @@ export default async function handler(req, res) {
   // CORS & Security headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  const ip = getClientIp(req);
+
+  // Rate Limiting check
+  const maxReqs = (req.method === 'GET' ? 120 : 25);
+  const rateLimit = checkRateLimit(ip, maxReqs, 60);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: `تم تجاوز معدل الطلبات المسموح به. يرجى الانتظار ${rateLimit.retryAfter} ثانية.`,
+    });
+  }
+
   const token = 
     process.env.BLOB_READ_WRITE_TOKEN || 
-    process.env.VITE_BLOB_READ_WRITE_TOKEN || 
     'vercel_blob_rw_A53IpJjUTe4iXwXY_DtqKr9S6wORYyr3M0gPMm78SJ26WTE';
 
   // ?download=1 forces origin fetch and bypasses edge caching completely
@@ -30,7 +46,7 @@ export default async function handler(req, res) {
   res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
 
   // -------------------------------------------------------------------------
-  // GET: Fetch the latest store from Vercel Blob
+  // GET: Public read-only access (with rate limiting and origin freshness)
   // -------------------------------------------------------------------------
   if (req.method === 'GET') {
     try {
@@ -67,9 +83,29 @@ export default async function handler(req, res) {
   }
 
   // -------------------------------------------------------------------------
-  // POST / PUT: Save store payload to Vercel Blob
+  // POST / PUT: Requires Valid Admin Authentication Token
   // -------------------------------------------------------------------------
   if (req.method === 'POST' || req.method === 'PUT') {
+    // 1. Mandatory Authorization Check (SEC-01)
+    const authHeader = req.headers['authorization'];
+    const adminToken = 
+      req.headers['x-admin-token'] || 
+      (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
+
+    if (!adminToken) {
+      return res.status(401).json({ 
+        error: 'غير مصرح: يجب تسجيل الدخول بصلاحيات الإدارة لتطبيق التعديلات على الموقع (Missing Authorization Token).' 
+      });
+    }
+
+    const verified = verifyAdminToken(adminToken);
+    if (!verified || verified.role !== 'admin') {
+      return res.status(403).json({ 
+        error: 'رمز التحقق الإداري غير صالح أو منتهي الصلاحية، يرجى تسجيل الدخول مجدداً (Invalid or Expired Admin Token).' 
+      });
+    }
+
+    // 2. Validate Payload
     try {
       let payload = req.body;
       if (typeof payload === 'string') {

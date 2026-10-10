@@ -22,7 +22,16 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-const AUTH_STORAGE_KEY = 'ifps_admin_session';
+export const AUTH_STORAGE_KEY = 'ifps_admin_session';
+export const AUTH_TOKEN_KEY = 'ifps_admin_token';
+
+export function getAdminToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -30,11 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     async function initAuth() {
+      // 1. Supabase Auth if active
       if (isSupabaseConfigured) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            // Fetch profile
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
@@ -50,30 +59,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 avatar_url: profile.avatar_url,
                 created_at: profile.created_at,
               });
-            } else {
-              setUser({
-                id: session.user.id,
-                email: session.user.email || 'admin@iraqifps.org',
-                full_name: 'مدير النظام',
-                role: 'admin',
-                created_at: new Date().toISOString(),
-              });
+              setIsLoading(false);
+              return;
             }
           }
         } catch (e) {
           console.error('Supabase auth session error:', e);
         }
-      } else {
-        // Check local saved session
-        const savedSession = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (savedSession) {
-          try {
-            setUser(JSON.parse(savedSession));
-          } catch {
-            localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+
+      // 2. Cryptographic Serverless Session Verification
+      const savedToken = getAdminToken();
+      if (savedToken) {
+        try {
+          const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify', token: savedToken }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.valid && data.user) {
+              setUser(data.user);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // If offline or network issue, fallback to cached profile
+          const cachedSession = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (cachedSession) {
+            try {
+              setUser(JSON.parse(cachedSession));
+              setIsLoading(false);
+              return;
+            } catch {}
           }
         }
+        // If token is invalid or rejected by server, clear it
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
       }
+
+      setUser(null);
       setIsLoading(false);
     }
 
@@ -109,27 +138,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const ADMIN_PASSCODE = 'Allawi@91';
-
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
 
-    // 1. Direct Master Admin Passcode Verification
-    if (password.trim() === ADMIN_PASSCODE) {
-      const masterAdmin: UserProfile = {
-        id: 'admin-master',
-        email: email.trim() || 'admin@iraqifps.org',
-        full_name: 'مدير النظام (IFPS Admin)',
-        role: 'admin',
-        created_at: new Date().toISOString(),
-      };
-      setUser(masterAdmin);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(masterAdmin));
-      setIsLoading(false);
-      return { success: true };
+    // 1. Authenticate via Serverless API (Zero Hardcoded Secrets in Client)
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login',
+          email: email.trim(),
+          password: password.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
+        setUser(data.user);
+        setIsLoading(false);
+        return { success: true };
+      }
+
+      if (data.error) {
+        setIsLoading(false);
+        return { success: false, error: data.error };
+      }
+    } catch (err: any) {
+      console.warn('Server auth request failed:', err);
     }
 
-    // 2. Cloud Supabase Authentication (if configured)
+    // 2. Cloud Supabase Authentication (if configured as secondary provider)
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -156,13 +198,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
           return { success: true };
         }
-      } catch {
-        // Fallback to error return
-      }
+      } catch {}
     }
 
     setIsLoading(false);
-    return { success: false, error: 'رمز الدخول غير صحيح، يرجى إدخال الرمز المعتمد للإدارة' };
+    return { success: false, error: 'رمز الدخول غير صحيح، يرجى إدخال الرمز المعتمد للإدارة.' };
   };
 
   const logout = async () => {
@@ -171,6 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
   };
 
   const role = user?.role || null;

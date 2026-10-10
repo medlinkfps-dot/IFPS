@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -35,9 +35,8 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  if (!user) {
-    navigate('/admin/login');
-    return null;
+  if (!user || !isAdmin) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   const handleLogout = async () => {
