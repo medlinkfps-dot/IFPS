@@ -57,6 +57,16 @@ export const Navbar: React.FC = () => {
       }
     }
     loadNavData();
+
+    const handleUpdate = () => {
+      loadNavData();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   useEffect(() => {

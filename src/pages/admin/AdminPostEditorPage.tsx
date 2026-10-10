@@ -13,7 +13,9 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Layers,
-  FileText
+  FileText,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { getPostById, createPost, updatePost, getContentTypes } from '../../lib/db';
 import { Post, ContentType, PostStatus } from '../../types';
@@ -134,15 +136,25 @@ export const AdminPostEditorPage: React.FC = () => {
     try {
       if (isEditing && id) {
         await updatePost(id, postPayload);
-        setStatusMessage({ type: 'success', text: 'تم تحديث المنشور بنجاح!' });
+        setStatusMessage({
+          type: 'success',
+          text: targetStatus === 'published'
+            ? 'تم تطبيق التعديلات ونشر المنشور مباشرة على الموقع بنجاح!'
+            : 'تم حفظ مسودة المنشور بنجاح!'
+        });
       } else {
         const created = await createPost(postPayload);
-        setStatusMessage({ type: 'success', text: 'تم إنشاء المنشور بنجاح!' });
+        setStatusMessage({
+          type: 'success',
+          text: targetStatus === 'published'
+            ? 'تم تطبيق المنشور ونشره مباشرة على الموقع بنجاح!'
+            : 'تم حفظ مسودة المنشور بنجاح!'
+        });
         navigate(`/admin/posts/edit/${created.id}`);
       }
     } catch (err: any) {
       console.error('Error saving post:', err);
-      setStatusMessage({ type: 'error', text: 'حدث خطأ أثناء حفظ المنشور.' });
+      setStatusMessage({ type: 'error', text: 'حدث خطأ أثناء تطبيق التعديلات.' });
     } finally {
       setSaving(false);
     }
@@ -155,7 +167,7 @@ export const AdminPostEditorPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-24">
       <SEO title={isEditing ? `تعديل المنشور: ${titleAr}` : 'إنشاء منشور جديد | IFPS CMS'} />
 
       {/* Editor Header */}
@@ -183,47 +195,72 @@ export const AdminPostEditorPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setPreviewOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors"
           >
             <Eye className="w-4 h-4 text-medical-600" />
-            <span>معاينة مباشرة</span>
+            <span>معاينة المحتوى</span>
           </button>
 
           <button
             type="button"
             disabled={saving}
             onClick={() => handleSave('draft')}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors disabled:opacity-50"
           >
             حفظ كمسودة
           </button>
 
+          {/* Primary Apply Button */}
           <button
             type="button"
             disabled={saving}
             onClick={() => handleSave('published')}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-medical-600 hover:bg-medical-700 text-white text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white text-xs sm:text-sm font-black transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            title="تطبيق المنشور فوراً ونشره على الموقع مباشرة دون حاجة لبرمجة"
           >
-            <Save className="w-4 h-4" />
-            <span>{saving ? 'جارِ الحفظ...' : 'نشر على الموقع'}</span>
+            <Sparkles className="w-4 h-4 text-emerald-200" />
+            <span>{saving ? 'جارِ التطبيق والنشر...' : 'تطبيق على الموقع'}</span>
           </button>
         </div>
       </div>
 
       {statusMessage && (
         <div
-          className={`p-4 rounded-xl text-xs flex items-center gap-2 ${
+          className={`p-4 rounded-2xl text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm ${
             statusMessage.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-              : 'bg-rose-50 text-rose-900 border border-rose-200'
+              ? 'bg-emerald-50 text-emerald-950 border border-emerald-200'
+              : 'bg-rose-50 text-rose-950 border border-rose-200'
           }`}
         >
-          {statusMessage.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <div className="flex items-center gap-3">
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+            )}
+            <div>
+              <p className="font-bold text-sm">{statusMessage.text}</p>
+              {statusMessage.type === 'success' && (
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  تم نشر وتطبيق التحديث على الموقع فوراً وبشكل تلقائي.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {statusMessage.type === 'success' && status === 'published' && (
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={`/${selectedTypeSlug === 'news' ? 'news' : selectedTypeSlug}/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+              >
+                <span>معاينة المنشور في الموقع الآن</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
           )}
-          <span>{statusMessage.text}</span>
         </div>
       )}
 
@@ -582,6 +619,37 @@ export const AdminPostEditorPage: React.FC = () => {
           author_name: 'إدارة جمعية أطباء الأسرة العراقية',
         }}
       />
+
+      {/* Floating Sticky Bottom Bar for quick Apply */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3 px-4 sm:px-8 shadow-2xl flex items-center justify-between gap-4 md:mr-64">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <span className="text-xs font-bold text-navy-900 truncate">
+            {titleAr ? `المنشور: ${titleAr}` : 'إنشاء منشور جديد'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => handleSave('draft')}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors disabled:opacity-50"
+          >
+            حفظ كمسودة
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => handleSave('published')}
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white text-xs font-black transition-all shadow-md disabled:opacity-50"
+            title="تطبيق المنشور ونشره فوراً على الموقع"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+            <span>{saving ? 'جارِ التطبيق...' : 'تطبيق على الموقع'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

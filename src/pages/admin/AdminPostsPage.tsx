@@ -67,6 +67,19 @@ export const AdminPostsPage: React.FC = () => {
     }
   };
 
+  const handleToggleStatus = async (post: Post) => {
+    try {
+      const nextStatus = post.status === 'published' ? 'draft' : 'published';
+      await updatePost(post.id, { 
+        status: nextStatus,
+        published_at: nextStatus === 'published' ? new Date().toISOString() : post.published_at 
+      });
+      fetchPosts();
+    } catch (e) {
+      console.error('Error toggling status:', e);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!postToDelete) return;
     try {
@@ -192,16 +205,23 @@ export const AdminPostsPage: React.FC = () => {
                     </td>
 
                     <td className="py-4 px-3">
-                      <Badge 
-                        variant={
-                          post.status === 'published' ? 'success' : 
-                          post.status === 'scheduled' ? 'secondary' : 'warning'
-                        }
-                        size="sm"
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(post)}
+                        title="اضغط لتطبيق وتغيير حالة النشر على الموقع مباشرة"
+                        className="transition-transform active:scale-95"
                       >
-                        {post.status === 'published' ? 'منشور' : 
-                         post.status === 'scheduled' ? 'مجدول' : 'مسودة'}
-                      </Badge>
+                        <Badge 
+                          variant={
+                            post.status === 'published' ? 'success' : 
+                            post.status === 'scheduled' ? 'secondary' : 'warning'
+                          }
+                          size="sm"
+                        >
+                          {post.status === 'published' ? 'منشور (مباشر)' : 
+                           post.status === 'scheduled' ? 'مجدول' : 'مسودة'}
+                        </Badge>
+                      </button>
                     </td>
 
                     <td className="py-4 px-3 text-slate-500">

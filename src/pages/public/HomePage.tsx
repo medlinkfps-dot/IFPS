@@ -51,6 +51,16 @@ export const HomePage: React.FC = () => {
       }
     }
     loadHomeContent();
+
+    const handleUpdate = () => {
+      loadHomeContent();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   const emblemUrl = settings['official_emblem_url']?.value_ar || '/fps.png';
@@ -166,10 +176,10 @@ export const HomePage: React.FC = () => {
 
                   <div className="bg-navy-950/60 rounded-2xl p-4 border border-white/10 text-right space-y-2">
                     <div className="text-xs text-slate-200 leading-relaxed font-light">
-                      "طبيب الأسرة هو خط الدفاع الأول والشريك الدائم لصحة الفرد والعائلة في كل مراحل الحياة."
+                      "{settings['president_quote']?.value_ar || 'طبيب الأسرة هو خط الدفاع الأول والشريك الدائم لصحة الفرد والعائلة في كل مراحل الحياة.'}"
                     </div>
                     <div className="text-[11px] font-bold text-medical-300">
-                      الطبيب الاستشاري  أ.م.د. منتظر سعد جابر — رئيس الجمعية
+                      {settings['president_name']?.value_ar || 'الطبيب الاستشاري  أ.م.د. منتظر سعد جابر'} — {settings['president_title']?.value_ar || 'رئيس الجمعية'}
                     </div>
                   </div>
                 </div>

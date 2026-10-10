@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   Target, 
@@ -10,8 +10,33 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
+import { getSettings } from '../../lib/db';
+import { SiteSetting } from '../../types';
 
 export const AboutPage: React.FC = () => {
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getSettings();
+        setSettings(data);
+      } catch (e) {
+        console.error('Error loading settings in AboutPage:', e);
+      }
+    }
+    loadData();
+
+    const handleUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
   return (
     <div className="py-10 sm:py-16 bg-slate-50 min-h-screen">
       <SEO 
@@ -131,7 +156,7 @@ export const AboutPage: React.FC = () => {
                   كلمة رئيس الجمعية
                 </h3>
                 <p className="text-xs text-medical-600 font-medium">
-                  الطبيب الاستشاري  أ.م.د. منتظر سعد جابر — رئيس الجمعية
+                  {settings['president_name']?.value_ar || 'الطبيب الاستشاري  أ.م.د. منتظر سعد جابر'} — {settings['president_title']?.value_ar || 'رئيس الجمعية'}
                 </p>
               </div>
             </div>

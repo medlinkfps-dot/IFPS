@@ -593,9 +593,9 @@ export const AdminDocumentsPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-2.5 rounded-xl bg-medical-600 hover:bg-medical-700 active:scale-95 text-white font-bold transition-all shadow-sm"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-bold transition-all shadow-md"
             >
-              {isSaving ? 'جارِ الحفظ...' : editingDocId ? 'حفظ التعديلات' : 'إضافة الوثيقة'}
+              {isSaving ? 'جارِ التطبيق على الموقع...' : editingDocId ? 'تطبيق التعديلات على الموقع' : 'تطبيق ونشر الوثيقة على الموقع'}
             </button>
           </div>
 

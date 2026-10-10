@@ -24,6 +24,16 @@ export const CoursesPage: React.FC = () => {
       }
     }
     loadCourses();
+
+    const handleUpdate = () => {
+      loadCourses();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   return (

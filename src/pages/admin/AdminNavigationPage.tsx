@@ -93,10 +93,11 @@ export const AdminNavigationPage: React.FC = () => {
 
           <button
             onClick={handleSave}
-            className="flex items-center gap-1.5 px-5 py-2 bg-medical-600 hover:bg-medical-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-95"
+            title="تطبيق الترتيب فوراً على قائمة الموقع الرئيسية"
           >
             <Save className="w-4 h-4" />
-            <span>حفظ الترتيب</span>
+            <span>تطبيق التعديلات على الموقع</span>
           </button>
         </div>
       </div>
@@ -104,7 +105,7 @@ export const AdminNavigationPage: React.FC = () => {
       {savedMessage && (
         <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600" />
-          <span>تم حفظ تعديلات القائمة بنجاح!</span>
+          <span>تم تطبيق تعديلات القائمة على الموقع بنجاح!</span>
         </div>
       )}
 

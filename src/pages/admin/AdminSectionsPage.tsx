@@ -286,9 +286,9 @@ export const AdminSectionsPage: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-medical-600 hover:bg-medical-700 text-white rounded-xl shadow-sm"
+              className="px-6 py-2.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white rounded-xl shadow-md transition-all"
             >
-              حفظ القسم
+              {editingType ? 'تطبيق التعديلات على الموقع' : 'تطبيق وإضافة القسم على الموقع'}
             </button>
           </div>
         </form>

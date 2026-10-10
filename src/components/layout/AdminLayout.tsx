@@ -176,10 +176,15 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>النشر والتطبيق المباشر نشط</span>
+            </div>
+
             <Link
               to="/"
               target="_blank"
-              className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-navy-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-navy-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-xl transition-colors border border-slate-200/60"
             >
               <span>معاينة الموقع العام</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />

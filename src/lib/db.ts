@@ -30,6 +30,17 @@ const STORAGE_KEYS = {
   DOCUMENTS: 'ifps_documents_store',
 };
 
+// Helper to broadcast changes across open pages and components
+export function broadcastContentUpdate(entityType?: string): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('ifps_content_updated', {
+        detail: { entityType, timestamp: Date.now() },
+      })
+    );
+  }
+}
+
 // Helper to initialize local storage if needed
 function getStoredData<T>(key: string, initial: T): T {
   try {
@@ -47,6 +58,7 @@ function getStoredData<T>(key: string, initial: T): T {
 function setStoredData<T>(key: string, data: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(data));
+    broadcastContentUpdate(key);
   } catch (e) {
     console.error('Storage error:', e);
   }
@@ -346,6 +358,7 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
 
     if (!error && data) {
       await logAdminAction('CREATE', 'post', data.id, { title: newPost.title_ar });
+      broadcastContentUpdate('posts');
       return { ...data, content_type_slug: selectedType.slug, content_type_name_ar: selectedType.name_ar };
     }
   }
@@ -375,6 +388,7 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
 
     if (!error && data) {
       await logAdminAction('UPDATE', 'post', id, { title: updates.title_ar });
+      broadcastContentUpdate('posts');
       return data;
     }
   }
@@ -435,7 +449,10 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
       .upsert({ key, value_ar, value_en, updated_at: new Date().toISOString() })
       .select()
       .single();
-    if (!error && data) return data;
+    if (!error && data) {
+      broadcastContentUpdate('settings');
+      return data;
+    }
   }
 
   const settings = await getSettings();

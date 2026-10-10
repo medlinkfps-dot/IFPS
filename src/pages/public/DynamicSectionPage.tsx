@@ -34,6 +34,16 @@ export const DynamicSectionPage: React.FC = () => {
       }
     }
     loadSection();
+
+    const handleUpdate = () => {
+      loadSection();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [slug]);
 
   if (loading) {
