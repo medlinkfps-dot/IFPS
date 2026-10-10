@@ -26,9 +26,8 @@ export const isBlobConfigured = Boolean(
   BLOB_READ_WRITE_TOKEN.startsWith('vercel_blob_')
 );
 
-const BLOB_STORE_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json';
-const BLOB_PUT_API = 'https://blob.vercel-storage.com/ifps_store.json';
 const LOCAL_STORAGE_BACKUP_KEY = 'ifps_blob_cache_store';
+const BLOB_DIRECT_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json';
 
 export interface BlobStoreData {
   version: number;
@@ -91,9 +90,9 @@ function setLocalCache(data: BlobStoreData) {
 }
 
 /**
- * Loads the central cloud store from Vercel Blob.
- * Uses Stale-While-Revalidate: Returns cached data immediately if available,
- * while syncing newest data from Vercel Blob in the background.
+ * Loads the central cloud store.
+ * Always attempts a fresh fetch from /api/store (with fallback to direct blob GET),
+ * falling back to local cache if offline.
  */
 export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
   const cached = getLocalCache();
@@ -102,9 +101,8 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
     return cached;
   }
 
-  // If we already have memory cache and not forcing fresh, trigger background sync
+  // If memory store exists and not forcing fresh, return instantly and sync in background
   if (!forceFresh && inMemoryStore && inMemoryStore.posts && inMemoryStore.posts.length > 0) {
-    // Background sync to ensure updates from other devices arrive
     syncFromCloudInBackground();
     return inMemoryStore;
   }
@@ -115,27 +113,37 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
 
   activeFetchPromise = (async () => {
     try {
-      const res = await fetch(BLOB_STORE_URL, {
-        headers: {
-          'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-        },
-      });
+      // 1. Try our same-origin Serverless API route first (no CORS, no CDN stale cache)
+      const apiRes = await fetch(`/api/store?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      }).catch(() => null);
 
-      if (res.ok) {
-        const cloudData = await res.json();
-        // Check if cloud data is valid and initialized
+      if (apiRes && apiRes.ok) {
+        const cloudData = await apiRes.json();
         if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
           setLocalCache(cloudData);
           return cloudData;
         }
       }
 
-      // If store doesn't exist on blob or has no posts, seed it
-      console.log('Vercel Blob store empty or uninitialized. Seeding initial data...');
-      const seedData = getDefaultStoreData();
-      await pushBlobStoreToCloud(seedData);
-      setLocalCache(seedData);
-      return seedData;
+      // 2. Fallback to direct private blob GET with auth header
+      const directRes = await fetch(`${BLOB_DIRECT_URL}?_nocache=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
+        },
+        cache: 'no-store',
+      }).catch(() => null);
+
+      if (directRes && directRes.ok) {
+        const cloudData = await directRes.json();
+        if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
+          setLocalCache(cloudData);
+          return cloudData;
+        }
+      }
+
+      return cached;
     } catch (err) {
       console.warn('Network error reading from Vercel Blob, using cached store:', err);
       return cached;
@@ -153,38 +161,70 @@ function syncFromCloudInBackground() {
   backgroundSyncTimeout = setTimeout(async () => {
     backgroundSyncTimeout = null;
     try {
-      const res = await fetch(BLOB_STORE_URL, {
-        headers: {
-          'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
-        },
-      });
-      if (res.ok) {
-        const cloudData = await res.json();
-        if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
-          // If cloud data is newer, update cache and broadcast
-          if (!inMemoryStore || cloudData.last_updated !== inMemoryStore.last_updated) {
-            setLocalCache(cloudData);
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('ifps_content_updated', { detail: { source: 'cloud_sync' } })
-              );
-            }
+      let cloudData: BlobStoreData | null = null;
+
+      // Try serverless API
+      const apiRes = await fetch(`/api/store?_t=${Date.now()}`, {
+        cache: 'no-store',
+      }).catch(() => null);
+
+      if (apiRes && apiRes.ok) {
+        cloudData = await apiRes.json();
+      } else {
+        // Fallback to direct GET
+        const directRes = await fetch(`${BLOB_DIRECT_URL}?_nocache=${Date.now()}`, {
+          headers: {
+            'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
+          },
+          cache: 'no-store',
+        }).catch(() => null);
+        if (directRes && directRes.ok) {
+          cloudData = await directRes.json();
+        }
+      }
+
+      if (cloudData && Array.isArray(cloudData.posts) && cloudData.settings) {
+        if (!inMemoryStore || cloudData.last_updated !== inMemoryStore.last_updated) {
+          setLocalCache(cloudData);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('ifps_content_updated', { detail: { source: 'cloud_sync' } })
+            );
           }
         }
       }
     } catch (e) {
       // Quiet background failure
     }
-  }, 1000);
+  }, 300);
 }
 
 /**
  * Pushes full store payload to Vercel Blob cloud.
+ * Uses /api/store on the server to prevent CORS and authorization preflight issues.
  */
 async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
   if (!isBlobConfigured) return false;
   try {
-    const res = await fetch(BLOB_PUT_API, {
+    // 1. Send to serverless API endpoint
+    const apiRes = await fetch('/api/store', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }).catch(() => null);
+
+    if (apiRes && apiRes.ok) {
+      const resJson = await apiRes.json();
+      if (resJson.last_updated) {
+        data.last_updated = resJson.last_updated;
+      }
+      return true;
+    }
+
+    // 2. Direct PUT fallback (for node/server-side scripts)
+    const directRes = await fetch('https://blob.vercel-storage.com/ifps_store.json', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${BLOB_READ_WRITE_TOKEN}`,
@@ -195,8 +235,9 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-    });
-    return res.ok;
+    }).catch(() => null);
+
+    return Boolean(directRes && directRes.ok);
   } catch (err) {
     console.error('Failed to write to Vercel Blob:', err);
     return false;
@@ -205,12 +246,13 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
 
 /**
  * Saves modifications to both local cache and cloud Vercel Blob.
+ * Awaits server sync to ensure changes are permanently stored on cloud before resolving.
  */
 export async function saveBlobStore(data: BlobStoreData): Promise<void> {
   data.last_updated = new Date().toISOString();
   setLocalCache(data);
 
-  // Broadcast update immediately to open UI components
+  // Broadcast update immediately to open UI components in the current tab
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
       new CustomEvent('ifps_content_updated', {
@@ -219,8 +261,11 @@ export async function saveBlobStore(data: BlobStoreData): Promise<void> {
     );
   }
 
-  // Push to Vercel Blob in background
-  await pushBlobStoreToCloud(data);
+  // Push to Vercel Blob
+  const saved = await pushBlobStoreToCloud(data);
+  if (!saved) {
+    console.warn('Warning: Cloud save did not return OK, changes kept in local cache.');
+  }
 }
 
 /**

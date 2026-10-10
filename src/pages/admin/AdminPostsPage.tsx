@@ -56,6 +56,16 @@ export const AdminPostsPage: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
+
+    const handleUpdate = () => {
+      fetchPosts();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [selectedType, selectedStatus, search]);
 
   const handleTogglePin = async (post: Post) => {

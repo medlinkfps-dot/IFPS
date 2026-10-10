@@ -429,10 +429,11 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     store.posts.unshift(newPost);
     await saveBlobStore(store);
     await logAdminAction('CREATE', 'post', newPost.id, { title: newPost.title_ar });
+    broadcastContentUpdate('posts');
     return newPost;
   }
 
@@ -440,16 +441,26 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
   all.unshift(newPost);
   setStoredData(STORAGE_KEYS.POSTS, all);
   await logAdminAction('CREATE', 'post', newPost.id, { title: newPost.title_ar });
+  broadcastContentUpdate('posts');
   return newPost;
 }
 
 export async function updatePost(id: string, updates: Partial<Post>): Promise<Post> {
   const updatedTime = new Date().toISOString();
-  const cleanUpdates = {
+  const cleanUpdates: Partial<Post> = {
     ...updates,
     updated_at: updatedTime,
     ...(updates.status === 'published' && !updates.published_at ? { published_at: updatedTime } : {}),
   };
+
+  if (updates.content_type_id) {
+    const types = await getContentTypes();
+    const selectedType = types.find(t => t.id === updates.content_type_id);
+    if (selectedType) {
+      cleanUpdates.content_type_slug = selectedType.slug;
+      cleanUpdates.content_type_name_ar = selectedType.name_ar;
+    }
+  }
 
   if (isSupabaseConfigured) {
     const { data, error } = await supabase
@@ -467,12 +478,13 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     const index = store.posts.findIndex(p => p.id === id);
     if (index !== -1) {
       store.posts[index] = { ...store.posts[index], ...cleanUpdates };
       await saveBlobStore(store);
       await logAdminAction('UPDATE', 'post', id, { title: store.posts[index].title_ar });
+      broadcastContentUpdate('posts');
       return store.posts[index];
     }
   }
@@ -483,6 +495,7 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
     all[index] = { ...all[index], ...cleanUpdates };
     setStoredData(STORAGE_KEYS.POSTS, all);
     await logAdminAction('UPDATE', 'post', id, { title: all[index].title_ar });
+    broadcastContentUpdate('posts');
     return all[index];
   }
   throw new Error('Post not found');
@@ -501,7 +514,7 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore();
+    const store = await getBlobStore(true);
     if (softDelete) {
       const p = store.posts.find(x => x.id === id);
       if (p) p.deleted_at = new Date().toISOString();
@@ -510,6 +523,7 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
     }
     await saveBlobStore(store);
     await logAdminAction('DELETE', 'post', id);
+    broadcastContentUpdate('posts');
     return;
   }
 
@@ -522,6 +536,7 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
     setStoredData(STORAGE_KEYS.POSTS, filtered);
   }
   await logAdminAction('DELETE', 'post', id);
+  broadcastContentUpdate('posts');
 }
 
 // ------------------------------------------------------------------------------
