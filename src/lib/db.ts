@@ -1,5 +1,10 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { 
+  getBlobStore, 
+  saveBlobStore, 
+  isBlobConfigured 
+} from './blobStorage';
+import { 
   Post, 
   ContentType, 
   Category, 
@@ -73,9 +78,16 @@ export async function getContentTypes(): Promise<ContentType[]> {
       .from('content_types')
       .select('*')
       .order('sort_order', { ascending: true });
-    
     if (!error && data && data.length > 0) return data;
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (store.content_types && store.content_types.length > 0) {
+      return store.content_types;
+    }
+  }
+
   return getStoredData<ContentType[]>(STORAGE_KEYS.CONTENT_TYPES, INITIAL_CONTENT_TYPES);
 }
 
@@ -95,6 +107,14 @@ export async function createContentType(type: Omit<ContentType, 'id'>): Promise<
     if (!error && data) return data;
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.content_types.push(newType);
+    await saveBlobStore(store);
+    await logAdminAction('CREATE', 'section', newType.id, { name: newType.name_ar });
+    return newType;
+  }
+
   const types = await getContentTypes();
   types.push(newType);
   setStoredData(STORAGE_KEYS.CONTENT_TYPES, types);
@@ -111,6 +131,17 @@ export async function updateContentType(id: string, updates: Partial<ContentType
       .select()
       .single();
     if (!error && data) return data;
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const index = store.content_types.findIndex(t => t.id === id);
+    if (index !== -1) {
+      store.content_types[index] = { ...store.content_types[index], ...updates };
+      await saveBlobStore(store);
+      await logAdminAction('UPDATE', 'section', id, updates);
+      return store.content_types[index];
+    }
   }
 
   const types = await getContentTypes();
@@ -137,6 +168,15 @@ export async function getCategories(contentTypeId?: string): Promise<Category[]>
     if (!error && data && data.length > 0) return data;
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    let cats = store.categories || [];
+    if (contentTypeId) {
+      cats = cats.filter(c => c.content_type_id === contentTypeId);
+    }
+    return cats;
+  }
+
   const all = getStoredData<Category[]>(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
   if (contentTypeId) {
     return all.filter(c => c.content_type_id === contentTypeId);
@@ -157,6 +197,14 @@ export async function createCategory(category: Omit<Category, 'id'>): Promise<Ca
       .select()
       .single();
     if (!error && data) return data;
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.categories.push(newCat);
+    await saveBlobStore(store);
+    await logAdminAction('CREATE', 'category', newCat.id, { name: newCat.name_ar });
+    return newCat;
   }
 
   const cats = await getCategories();
@@ -219,8 +267,14 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
     }
   }
 
-  // Resilient fallback store
-  let all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
+  // Load from Vercel Blob if configured, otherwise localStorage
+  let all: Post[] = [];
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    all = [...store.posts];
+  } else {
+    all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
+  }
 
   // Filter by soft delete
   all = all.filter(p => !p.deleted_at);
@@ -275,6 +329,12 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     }
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const found = store.posts.find(p => p.slug === slug && !p.deleted_at);
+    return found || null;
+  }
+
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
   const found = all.find(p => p.slug === slug && !p.deleted_at);
   return found || null;
@@ -295,6 +355,11 @@ export async function getPostById(id: string): Promise<Post | null> {
         content_type_name_ar: data.content_types?.name_ar,
       };
     }
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    return store.posts.find(p => p.id === id) || null;
   }
 
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
@@ -363,6 +428,14 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
     }
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.posts.unshift(newPost);
+    await saveBlobStore(store);
+    await logAdminAction('CREATE', 'post', newPost.id, { title: newPost.title_ar });
+    return newPost;
+  }
+
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
   all.unshift(newPost);
   setStoredData(STORAGE_KEYS.POSTS, all);
@@ -393,6 +466,17 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
     }
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const index = store.posts.findIndex(p => p.id === id);
+    if (index !== -1) {
+      store.posts[index] = { ...store.posts[index], ...cleanUpdates };
+      await saveBlobStore(store);
+      await logAdminAction('UPDATE', 'post', id, { title: store.posts[index].title_ar });
+      return store.posts[index];
+    }
+  }
+
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
   const index = all.findIndex(p => p.id === id);
   if (index !== -1) {
@@ -414,6 +498,19 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
     } else {
       await supabase.from('posts').delete().eq('id', id);
     }
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (softDelete) {
+      const p = store.posts.find(x => x.id === id);
+      if (p) p.deleted_at = new Date().toISOString();
+    } else {
+      store.posts = store.posts.filter(x => x.id !== id);
+    }
+    await saveBlobStore(store);
+    await logAdminAction('DELETE', 'post', id);
+    return;
   }
 
   const all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
@@ -439,6 +536,14 @@ export async function getSettings(): Promise<Record<string, SiteSetting>> {
       return map;
     }
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (store.settings && Object.keys(store.settings).length > 0) {
+      return store.settings;
+    }
+  }
+
   return getStoredData<Record<string, SiteSetting>>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
 }
 
@@ -453,6 +558,23 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
       broadcastContentUpdate('settings');
       return data;
     }
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const updated: SiteSetting = {
+      key,
+      value_ar,
+      value_en: value_en || store.settings[key]?.value_en || '',
+      description: store.settings[key]?.description || '',
+      category: store.settings[key]?.category || 'general',
+      is_public: true,
+      updated_at: new Date().toISOString(),
+    };
+    store.settings[key] = updated;
+    await saveBlobStore(store);
+    await logAdminAction('SETTINGS_UPDATE', 'setting', key, { value_ar });
+    return updated;
   }
 
   const settings = await getSettings();
@@ -485,6 +607,14 @@ export async function getNavigationItems(): Promise<NavigationItem[]> {
       return data.filter(item => item.path !== '/opportunities');
     }
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (store.navigation && store.navigation.length > 0) {
+      return store.navigation.filter(item => item.is_active && item.path !== '/opportunities');
+    }
+  }
+
   const items = getStoredData<NavigationItem[]>(STORAGE_KEYS.NAVIGATION, INITIAL_NAVIGATION);
   return items.filter(item => item.is_active && item.path !== '/opportunities');
 }
@@ -493,6 +623,15 @@ export async function saveNavigationItems(items: NavigationItem[]): Promise<Navi
   if (isSupabaseConfigured) {
     await supabase.from('navigation_items').upsert(items);
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.navigation = items;
+    await saveBlobStore(store);
+    await logAdminAction('UPDATE', 'setting', 'navigation', { count: items.length });
+    return items;
+  }
+
   setStoredData(STORAGE_KEYS.NAVIGATION, items);
   await logAdminAction('UPDATE', 'setting', 'navigation', { count: items.length });
   return items;
@@ -521,6 +660,13 @@ export async function submitContactMessage(
     if (!error && inserted) return inserted;
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.messages.unshift(newMsg);
+    await saveBlobStore(store);
+    return newMsg;
+  }
+
   const msgs = getStoredData<ContactMessage[]>(STORAGE_KEYS.MESSAGES, []);
   msgs.unshift(newMsg);
   setStoredData(STORAGE_KEYS.MESSAGES, msgs);
@@ -535,6 +681,12 @@ export async function getContactMessages(): Promise<ContactMessage[]> {
       .order('created_at', { ascending: false });
     if (!error && data) return data;
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    return store.messages || [];
+  }
+
   return getStoredData<ContactMessage[]>(STORAGE_KEYS.MESSAGES, []);
 }
 
@@ -542,6 +694,17 @@ export async function markContactMessageRead(id: string, is_read: boolean): Prom
   if (isSupabaseConfigured) {
     await supabase.from('contact_messages').update({ is_read }).eq('id', id);
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const target = store.messages.find(m => m.id === id);
+    if (target) {
+      target.is_read = is_read;
+      await saveBlobStore(store);
+    }
+    return;
+  }
+
   const msgs = await getContactMessages();
   const updated = msgs.map(m => m.id === id ? { ...m, is_read } : m);
   setStoredData(STORAGE_KEYS.MESSAGES, updated);
@@ -551,6 +714,14 @@ export async function deleteContactMessage(id: string): Promise<void> {
   if (isSupabaseConfigured) {
     await supabase.from('contact_messages').delete().eq('id', id);
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.messages = store.messages.filter(m => m.id !== id);
+    await saveBlobStore(store);
+    return;
+  }
+
   const msgs = await getContactMessages();
   setStoredData(STORAGE_KEYS.MESSAGES, msgs.filter(m => m.id !== id));
 }
@@ -578,6 +749,14 @@ export async function logAdminAction(
     await supabase.from('audit_logs').insert(log);
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.audit_logs.unshift(log);
+    if (store.audit_logs.length > 200) store.audit_logs.pop();
+    await saveBlobStore(store);
+    return;
+  }
+
   const logs = getStoredData<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
   logs.unshift(log);
   if (logs.length > 200) logs.pop();
@@ -593,6 +772,12 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
       .limit(100);
     if (!error && data) return data;
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    return store.audit_logs || [];
+  }
+
   return getStoredData<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
 }
 
@@ -607,6 +792,14 @@ export async function getPDFDocuments(): Promise<PDFDocument[]> {
       .order('created_at', { ascending: false });
     if (!error && data) return data;
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (store.documents && store.documents.length > 0) {
+      return store.documents;
+    }
+  }
+
   return getStoredData<PDFDocument[]>(STORAGE_KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
 }
 
@@ -630,6 +823,14 @@ export async function createPDFDocument(doc: Omit<PDFDocument, 'id' | 'created_a
     }
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    store.documents.unshift(newDoc);
+    await saveBlobStore(store);
+    await logAdminAction('CREATE', 'document', newDoc.id, { title: newDoc.title });
+    return newDoc;
+  }
+
   const docs = await getPDFDocuments();
   const updated = [newDoc, ...docs];
   setStoredData(STORAGE_KEYS.DOCUMENTS, updated);
@@ -651,6 +852,17 @@ export async function updatePDFDocument(id: string, updates: Partial<PDFDocument
     }
   }
 
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const index = store.documents.findIndex(d => d.id === id);
+    if (index !== -1) {
+      store.documents[index] = { ...store.documents[index], ...updates };
+      await saveBlobStore(store);
+      await logAdminAction('UPDATE', 'document', id, updates);
+      return store.documents[index];
+    }
+  }
+
   const docs = await getPDFDocuments();
   const index = docs.findIndex(d => d.id === id);
   if (index === -1) throw new Error('Document not found');
@@ -665,6 +877,16 @@ export async function deletePDFDocument(id: string): Promise<void> {
   if (isSupabaseConfigured) {
     await supabase.from('pdf_documents').delete().eq('id', id);
   }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const target = store.documents.find(d => d.id === id);
+    store.documents = store.documents.filter(d => d.id !== id);
+    await saveBlobStore(store);
+    await logAdminAction('DELETE', 'document', id, { title: target?.title });
+    return;
+  }
+
   const docs = await getPDFDocuments();
   const target = docs.find(d => d.id === id);
   const filtered = docs.filter(d => d.id !== id);
@@ -673,6 +895,16 @@ export async function deletePDFDocument(id: string): Promise<void> {
 }
 
 export async function incrementDocumentDownload(id: string): Promise<void> {
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    const target = store.documents.find(d => d.id === id);
+    if (target) {
+      target.downloads_count = (target.downloads_count || 0) + 1;
+      await saveBlobStore(store);
+    }
+    return;
+  }
+
   const docs = await getPDFDocuments();
   const doc = docs.find(d => d.id === id);
   if (doc) {
@@ -684,4 +916,3 @@ export async function incrementDocumentDownload(id: string): Promise<void> {
     setStoredData(STORAGE_KEYS.DOCUMENTS, updated);
   }
 }
-

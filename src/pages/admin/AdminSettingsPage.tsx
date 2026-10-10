@@ -357,17 +357,23 @@ export const AdminSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Instant Live Publishing System Card */}
+        {/* 5. Cloud Database & Instant Live Publishing System Card */}
         <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 rounded-3xl p-6 sm:p-8 text-white border border-navy-800 space-y-4 shadow-xl">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <h3 className="text-sm font-bold text-white">نظام النشر والتطبيق الفوري المباشر (Instant Live Apply)</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-navy-800/80 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <h3 className="text-sm font-bold text-white">قاعدة البيانات السحابية (Vercel Blob Storage)</h3>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold w-fit">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>متصلة ونشطة بنجاح (Cloud Synced)</span>
+            </div>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed font-light">
-            عند الضغط على <strong className="text-emerald-400 font-bold">"تطبيق التعديلات على الموقع"</strong>، يتم تحديث بيانات الموقع وهوية الجمعية فوراً وبشكل تلقائي، وتظهر التعديلات مباشرة أمام زوار الموقع دون الحاجة لأي تدخّل برمجي أو إعادة بناء.
+            الموقع مرتبط مباشرة بقاعدة بيانات تخزينية سحابية مركزية عبر <strong className="text-white font-semibold">Vercel Blob</strong>. عند الضغط على <strong className="text-emerald-400 font-bold">"تطبيق التعديلات على الموقع"</strong> أو حفظ أي منشور جديد، يتم حفظ البيانات في السحابة وبثها فوراً لكافة زوار الموقع في جميع أنحاء العالم وعلى كافة الأجهزة تلقائياً دون الحاجة لأي تدخّل برمجي أو إعادة بناء.
           </p>
         </div>
 
