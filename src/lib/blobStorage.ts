@@ -27,7 +27,7 @@ export const isBlobConfigured = Boolean(
 );
 
 const LOCAL_STORAGE_BACKUP_KEY = 'ifps_blob_cache_store';
-const BLOB_DIRECT_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json';
+const BLOB_DIRECT_URL = 'https://a53ipjjute4ixwxy.private.blob.vercel-storage.com/ifps_store.json?download=1';
 
 export interface BlobStoreData {
   version: number;
