@@ -53,6 +53,7 @@ export const AdminDocumentsPage: React.FC = () => {
   const [customCategory, setCustomCategory] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [fileName, setFileName] = useState('');
+  const [sortOrder, setSortOrder] = useState<number>(0);
   const [fileSize, setFileSize] = useState('');
   const [publishedDate, setPublishedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isActive, setIsActive] = useState(true);
@@ -82,6 +83,7 @@ export const AdminDocumentsPage: React.FC = () => {
     setFileUrl('');
     setFileName('');
     setFileSize('');
+    setSortOrder(0);
     setPublishedDate(new Date().toISOString().split('T')[0]);
     setIsActive(true);
     setIsModalOpen(true);
@@ -101,6 +103,7 @@ export const AdminDocumentsPage: React.FC = () => {
     setFileUrl(doc.file_url);
     setFileName(doc.file_name);
     setFileSize(doc.file_size || '');
+    setSortOrder(doc.sort_order || 0);
     setPublishedDate(doc.published_date || new Date().toISOString().split('T')[0]);
     setIsActive(doc.is_active);
     setIsModalOpen(true);
@@ -159,6 +162,7 @@ export const AdminDocumentsPage: React.FC = () => {
           file_name: fileName.trim() || `${title.trim()}.pdf`,
           file_size: fileSize.trim() || '1.0 MB',
           published_date: publishedDate,
+          sort_order: sortOrder,
           is_active: isActive,
         });
       } else {
@@ -170,6 +174,7 @@ export const AdminDocumentsPage: React.FC = () => {
           file_name: fileName.trim() || `${title.trim()}.pdf`,
           file_size: fileSize.trim() || '1.0 MB',
           published_date: publishedDate,
+          sort_order: sortOrder,
           is_active: isActive,
           downloads_count: 0,
         });
@@ -564,6 +569,18 @@ export const AdminDocumentsPage: React.FC = () => {
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-medical-500 focus:outline-none text-xs font-mono"
               />
             </div>
+          </div>
+
+          {/* Sort Order */}
+          <div className="space-y-1 pt-2">
+            <label className="text-[11px] font-semibold text-slate-600 block">ترتيب الظهور (الأولوية)</label>
+            <input
+              type="number"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+              className="w-full sm:w-1/3 px-3 py-2 rounded-xl border border-slate-200 focus:border-medical-500 focus:outline-none text-xs font-mono"
+            />
+            <p className="text-[10px] text-slate-400">الأرقام الأعلى تظهر أولاً في قائمة الوثائق (مثلاً: 10 يظهر قبل 0).</p>
           </div>
 
           {/* Status Checkbox */}

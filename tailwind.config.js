@@ -55,6 +55,15 @@ export default {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
         'premium': '0 10px 30px -5px rgba(11, 37, 69, 0.08), 0 5px 15px -5px rgba(11, 37, 69, 0.04)',
       },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
+        },
+      },
     },
   },
   plugins: [],

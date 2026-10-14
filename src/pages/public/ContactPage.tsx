@@ -141,7 +141,7 @@ export const ContactPage: React.FC = () => {
                   <MapPin className="w-4 h-4 text-medical-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="block text-slate-400 text-xs mb-0.5">العنوان:</span>
-                    <span className="text-slate-200">بغداد، جمهورية العراق</span>
+                    <span className="text-slate-200">العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق</span>
                   </div>
                 </div>
               </div>

@@ -17,8 +17,8 @@ import {
   Sparkles,
   ExternalLink
 } from 'lucide-react';
-import { getPostById, createPost, updatePost, getContentTypes } from '../../lib/db';
-import { Post, ContentType, PostStatus } from '../../types';
+import { getPostById, createPost, updatePost, getContentTypes, getCategories } from '../../lib/db';
+import { Post, ContentType, PostStatus, Category } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { VisualEditor } from '../../components/admin/VisualEditor';
 import { PostPreviewModal } from '../../components/admin/PostPreviewModal';
@@ -44,12 +44,22 @@ export const AdminPostEditorPage: React.FC = () => {
   const [summaryAr, setSummaryAr] = useState('');
   const [contentAr, setContentAr] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [sliderInterval, setSliderInterval] = useState<number>(3);
   const [status, setStatus] = useState<PostStatus>('draft');
   const [isPinned, setIsPinned] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [scheduledFor, setScheduledFor] = useState('');
+  const [authorName, setAuthorName] = useState('الإعلام والتواصل الرقمي');
+  const [customPublishDate, setCustomPublishDate] = useState('');
+  const [sortOrder, setSortOrder] = useState<number>(0);
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
+  const [additionalSections, setAdditionalSections] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [registrationStatus, setRegistrationStatus] = useState<'open' | 'closed' | 'archived' | ''>('');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
 
   // Metadata State
   const [metadata, setMetadata] = useState<Record<string, any>>({});
@@ -70,13 +80,22 @@ export const AdminPostEditorPage: React.FC = () => {
             setSummaryAr(post.summary_ar);
             setContentAr(post.content_ar);
             setFeaturedImage(post.featured_image || '');
+            setGalleryImages(post.metadata?.gallery_images || []);
+            setSliderInterval(post.metadata?.slider_interval || 3);
             setStatus(post.status);
             setIsPinned(post.is_pinned);
             setIsFeatured(post.is_featured);
             setScheduledFor(post.scheduled_for || '');
+            setAuthorName(post.author_name || 'الإعلام والتواصل الرقمي');
+            setCustomPublishDate(post.published_at ? post.published_at.slice(0, 16) : '');
+            setSortOrder(post.sort_order || 0);
             setSeoTitle(post.seo_title || '');
             setSeoDescription(post.seo_description || '');
             setMetadata(post.metadata || {});
+            setAdditionalSections(post.metadata?.additional_sections || []);
+            setSelectedCategories(post.metadata?.categories || []);
+            setRegistrationStatus(post.metadata?.registration_status || '');
+            setRegistrationDeadline(post.metadata?.registration_deadline || '');
           }
         } else if (types.length > 0) {
           setContentTypeId(types[0].id);
@@ -89,6 +108,14 @@ export const AdminPostEditorPage: React.FC = () => {
     }
     initEditor();
   }, [id, isEditing]);
+
+  useEffect(() => {
+    if (contentTypeId) {
+      getCategories(contentTypeId).then(setAvailableCategories).catch(console.error);
+    } else {
+      setAvailableCategories([]);
+    }
+  }, [contentTypeId]);
 
   // Auto-generate slug from Arabic title if creating new post
   const handleTitleChange = (val: string) => {
@@ -128,7 +155,10 @@ export const AdminPostEditorPage: React.FC = () => {
       is_pinned: isPinned,
       is_featured: isFeatured,
       scheduled_for: targetStatus === 'scheduled' ? scheduledFor : undefined,
-      metadata,
+      author_name: authorName.trim() || 'الإعلام والتواصل الرقمي',
+      sort_order: sortOrder,
+      published_at: customPublishDate ? new Date(customPublishDate).toISOString() : undefined,
+      metadata: { ...metadata, gallery_images: galleryImages, slider_interval: sliderInterval, additional_sections: additionalSections, categories: selectedCategories, registration_status: registrationStatus, registration_deadline: registrationDeadline },
       seo_title: seoTitle.trim() || titleAr.trim(),
       seo_description: seoDescription.trim() || summaryAr.trim(),
     };
@@ -464,29 +494,66 @@ export const AdminPostEditorPage: React.FC = () => {
 
           {/* Official Attachment File Box */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
-            <h3 className="text-sm font-bold text-navy-900">الملفات الرسمية المرفقة (PDF)</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <h3 className="text-sm font-bold text-navy-900 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-medical-600" />
+              <span>الملفات الرسمية المرفقة (PDF)</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">رابط الملف المباشر</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">رفع ملف PDF (اختياري)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-medical-50 file:text-medical-700 hover:file:bg-medical-100 transition-colors"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.type !== 'application/pdf') {
+                      setStatusMessage({ type: 'error', text: 'يرجى اختيار ملف PDF.' });
+                      return;
+                    }
+                    try {
+                      setSaving(true);
+                      const { uploadFile } = await import('../../lib/fileUtils');
+                      const result = await uploadFile(file, 'documents');
+                      setMetadata({ 
+                        ...metadata, 
+                        file_url: result.url,
+                        file_name: metadata.file_name || result.name 
+                      });
+                      setStatusMessage({ type: 'success', text: 'تم رفع الملف بنجاح.' });
+                    } catch (err: any) {
+                      setStatusMessage({ type: 'error', text: 'تعذر رفع الملف، يرجى المحاولة مرة أخرى.' });
+                    } finally {
+                      setSaving(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">رابط الملف المباشر (للمعاينة)</label>
                 <input
                   type="url"
                   value={metadata.file_url || ''}
                   onChange={(e) => setMetadata({ ...metadata, file_url: e.target.value })}
-                  placeholder="https://iraqifps.org/...pdf"
+                  placeholder="https://..."
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl"
                   dir="ltr"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">اسم الملف الظاهر للأعضاء</label>
-                <input
-                  type="text"
-                  value={metadata.file_name || ''}
-                  onChange={(e) => setMetadata({ ...metadata, file_name: e.target.value })}
-                  placeholder="مثال: أمر إداري وجبة خامسة.pdf"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">اسم الملف الظاهر للأعضاء</label>
+              <input
+                type="text"
+                value={metadata.file_name || ''}
+                onChange={(e) => setMetadata({ ...metadata, file_name: e.target.value })}
+                placeholder="مثال: أمر إداري وجبة خامسة.pdf"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl"
+              />
             </div>
           </div>
         </div>
@@ -502,13 +569,92 @@ export const AdminPostEditorPage: React.FC = () => {
               <select
                 value={contentTypeId}
                 onChange={(e) => setContentTypeId(e.target.value)}
-                className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+                className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500 mb-4"
               >
                 {contentTypes.map((t) => (
                   <option key={t.id} value={t.id}>{t.name_ar} ({t.name_en})</option>
                 ))}
               </select>
+
+              <div className="space-y-2">
+                <label className="block text-xs text-slate-600 font-medium">إظهار المنشور أيضاً في الأقسام التالية: (اختياري)</label>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
+                  {contentTypes
+                    .filter(t => t.id !== contentTypeId)
+                    .map(t => (
+                      <label key={t.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-3.5 h-3.5 text-medical-600 rounded border-slate-300 focus:ring-medical-500 cursor-pointer"
+                          checked={additionalSections.includes(t.slug)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAdditionalSections(prev => [...prev, t.slug]);
+                            } else {
+                              setAdditionalSections(prev => prev.filter(slug => slug !== t.slug));
+                            }
+                          }}
+                        />
+                        <span>{t.name_ar}</span>
+                      </label>
+                    ))
+                  }
+                </div>
+              </div>
+
+              {availableCategories.length > 0 && (
+                <div className="space-y-2 mt-4 pt-4 border-t border-slate-100">
+                  <label className="block text-xs text-slate-600 font-medium">تصنيفات المنشور الفرعية: (اختياري)</label>
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
+                    {availableCategories.map(cat => (
+                      <label key={cat.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-3.5 h-3.5 text-medical-600 rounded border-slate-300 focus:ring-medical-500 cursor-pointer"
+                          checked={selectedCategories.includes(cat.slug)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCategories(prev => [...prev, cat.slug]);
+                            } else {
+                              setSelectedCategories(prev => prev.filter(slug => slug !== cat.slug));
+                            }
+                          }}
+                        />
+                        <span>{cat.name_ar}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {['courses', 'events', 'annual-conferences', 'scientific-webinars'].includes(contentTypes.find(t => t.id === contentTypeId)?.slug || '') && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">حالة التسجيل</label>
+                <select
+                  value={registrationStatus}
+                  onChange={(e) => setRegistrationStatus(e.target.value as any)}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+                >
+                  <option value="">لا يوجد (فارغ)</option>
+                  <option value="open">التسجيل مفتوح</option>
+                  <option value="closed">التسجيل انتهى</option>
+                  <option value="archived">مؤرشفة</option>
+                </select>
+                {registrationStatus === 'open' && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">تاريخ ووقت إغلاق التسجيل التلقائي (اختياري)</label>
+                    <input
+                      type="datetime-local"
+                      value={registrationDeadline}
+                      onChange={(e) => setRegistrationDeadline(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">سيتم تغيير الحالة إلى "التسجيل انتهى" تلقائياً بعد هذا الموعد.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">حالة النشر</label>
@@ -565,8 +711,46 @@ export const AdminPostEditorPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Author & Visibility Settings */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
+            <h3 className="text-sm font-bold text-navy-900">إعدادات النشر المتقدمة</h3>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">اسم الناشر</label>
+              <input
+                type="text"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                placeholder="الإعلام والتواصل الرقمي"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">تاريخ ووقت النشر (اختياري)</label>
+              <input
+                type="datetime-local"
+                value={customPublishDate}
+                onChange={(e) => setCustomPublishDate(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-medical-500"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">يُستخدم لترتيب المنشور في الجدول الزمني للموقع.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">ترتيب الظهور الفوري (الأولوية)</label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">الأرقام الأعلى تظهر أولاً (مثلاً: 10 يظهر قبل 0).</p>
+            </div>
+          </div>
+
           {/* Featured Image Picker */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
             <ImageUploadField
               value={featuredImage}
               onChange={(url) => setFeaturedImage(url)}
@@ -574,6 +758,115 @@ export const AdminPostEditorPage: React.FC = () => {
               description="اختر صورة من جهازك لتظهر كواجهة رئيسية للمنشور في الموقع، محركات البحث، وشبكات التواصل."
               aspectRatio="video"
             />
+            
+            {featuredImage && (
+              <div className="pt-4 border-t border-slate-100">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">طريقة عرض الصورة في المقال</label>
+                <select
+                  value={metadata.image_display_style || 'cover'}
+                  onChange={(e) => setMetadata({ ...metadata, image_display_style: e.target.value })}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+                >
+                  <option value="cover">قص وتعبئة (مستطيل قياسي) - الافتراضي</option>
+                  <option value="contain">احتواء كامل للصورة (بدون قص)</option>
+                  <option value="auto">الحجم والأبعاد الأصلية بالكامل (للملصقات الطولية)</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Image Gallery Box */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-navy-900">معرض الصور (سلايدر للمقال)</h3>
+              <button
+                type="button"
+                onClick={() => setGalleryImages([...galleryImages, ''])}
+                className="px-3 py-1.5 bg-medical-50 text-medical-700 hover:bg-medical-100 font-bold rounded-lg text-[11px] transition-colors"
+              >
+                + إضافة صورة للمعرض
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500">الصور التي تضاف هنا ستعرض كـ سلايدر متحرك داخل المنشور بالتسلسل الذي تختاره.</p>
+
+            {galleryImages.map((imgUrl, index) => (
+              <div key={index} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 relative space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700">صورة رقم {index + 1}</span>
+                  <div className="flex gap-2">
+                    {index > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newGallery = [...galleryImages];
+                          [newGallery[index - 1], newGallery[index]] = [newGallery[index], newGallery[index - 1]];
+                          setGalleryImages(newGallery);
+                        }}
+                        className="text-slate-500 hover:text-navy-900 text-[10px] font-bold"
+                      >
+                        ▲ رفع
+                      </button>
+                    )}
+                    {index < galleryImages.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newGallery = [...galleryImages];
+                          [newGallery[index + 1], newGallery[index]] = [newGallery[index], newGallery[index + 1]];
+                          setGalleryImages(newGallery);
+                        }}
+                        className="text-slate-500 hover:text-navy-900 text-[10px] font-bold"
+                      >
+                        ▼ تنزيل
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newGallery = [...galleryImages];
+                        newGallery.splice(index, 1);
+                        setGalleryImages(newGallery);
+                      }}
+                      className="text-rose-500 hover:text-rose-700 text-[10px] font-bold"
+                    >
+                      ✖ إزالة
+                    </button>
+                  </div>
+                </div>
+                <ImageUploadField
+                  value={imgUrl}
+                  onChange={(url) => {
+                    const newGallery = [...galleryImages];
+                    newGallery[index] = url;
+                    setGalleryImages(newGallery);
+                  }}
+                  label="اختيار أو رفع صورة"
+                  aspectRatio="video"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFeaturedImage(imgUrl)}
+                  disabled={!imgUrl || featuredImage === imgUrl}
+                  className="w-full mt-2 px-3 py-2 bg-slate-200 hover:bg-medical-50 text-slate-700 hover:text-medical-700 disabled:opacity-50 text-xs font-bold rounded-xl transition-colors"
+                >
+                  {featuredImage === imgUrl ? '★ هذه هي الصورة البارزة للمقال' : '☆ تعيين كصورة بارزة (غلاف المقال)'}
+                </button>
+              </div>
+            ))}
+
+            {galleryImages.length > 0 && (
+              <div className="pt-3 border-t border-slate-100">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">الفاصل الزمني لتقليب الصور (بالثواني)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={sliderInterval}
+                  onChange={(e) => setSliderInterval(parseInt(e.target.value) || 3)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
+                />
+              </div>
+            )}
           </div>
 
           {/* SEO Meta Box */}

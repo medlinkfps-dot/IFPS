@@ -6,6 +6,7 @@ import { Post } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { getDerivedRegistrationStatus } from '../../lib/statusUtils';
 
 export const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<Post[]>([]);
@@ -74,24 +75,46 @@ export const EventsPage: React.FC = () => {
                 key={event.id}
                 className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-7 shadow-soft hover:shadow-md transition-all flex flex-col sm:flex-row gap-5 items-start"
               >
-                {/* Date block */}
-                <div className="w-full sm:w-28 sm:h-28 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center text-center p-3 shrink-0">
-                  <span className="text-[11px] text-slate-400 font-medium">المؤتمر السنوي</span>
-                  <span className="text-xl font-black text-navy-900 font-sans my-0.5">2026</span>
-                  <span className="text-[11px] font-bold text-medical-700 bg-medical-50 px-2 py-0.5 rounded-full">
-                    بغداد
-                  </span>
-                </div>
+                {/* Thumbnail or Date block */}
+                {event.featured_image ? (
+                  <div className="w-full sm:w-28 sm:h-28 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                    <img 
+                      src={event.featured_image} 
+                      alt={event.title_ar} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full sm:w-28 sm:h-28 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center text-center p-3 shrink-0">
+                    <span className="text-[11px] text-slate-400 font-medium">المؤتمر السنوي</span>
+                    <span className="text-xl font-black text-navy-900 font-sans my-0.5">2026</span>
+                    <span className="text-[11px] font-bold text-medical-700 bg-medical-50 px-2 py-0.5 rounded-full">
+                      بغداد
+                    </span>
+                  </div>
+                )}
 
                 {/* Event info */}
                 <div className="flex-1 space-y-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold text-navy-900 bg-navy-50 px-2.5 py-0.5 rounded-full">
-                      مؤتمر علمي وطني
+                      {event.categories?.[0]?.name_ar || 'مؤتمر علمي وطني'}
                     </span>
-                    <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                      التسجيل مفتوح
-                    </span>
+                    {getDerivedRegistrationStatus(event) === 'open' && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        التسجيل مفتوح
+                      </span>
+                    )}
+                    {getDerivedRegistrationStatus(event) === 'closed' && (
+                      <span className="text-[11px] font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full">
+                        التسجيل انتهى
+                      </span>
+                    )}
+                    {getDerivedRegistrationStatus(event) === 'archived' && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                        مؤرشفة
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-base sm:text-lg font-bold text-navy-900 leading-snug hover:text-medical-600 transition-colors">

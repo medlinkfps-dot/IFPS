@@ -12,9 +12,10 @@ import {
   CheckCircle2, 
   Clock, 
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  GripVertical
 } from 'lucide-react';
-import { getPosts, deletePost, updatePost, getContentTypes } from '../../lib/db';
+import { getPosts, deletePost, updatePost, updatePostsOrder, getContentTypes } from '../../lib/db';
 import { Post, ContentType } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { Badge } from '../../components/common/Badge';
@@ -32,6 +33,79 @@ export const AdminPostsPage: React.FC = () => {
   // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+
+  // Drag state
+  const [draggedPostId, setDraggedPostId] = useState<string | null>(null);
+  const [dragOverPostId, setDragOverPostId] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedPostId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragEnter = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedPostId && draggedPostId !== id) {
+      setDragOverPostId(id);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+    setDraggedPostId(null);
+    setDragOverPostId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    
+    if (!draggedPostId || draggedPostId === targetId) {
+      handleDragEnd(e);
+      return;
+    }
+
+    const newPosts = [...posts];
+    const draggedIndex = newPosts.findIndex(p => p.id === draggedPostId);
+    const targetIndex = newPosts.findIndex(p => p.id === targetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    // Remove dragged item
+    const [draggedItem] = newPosts.splice(draggedIndex, 1);
+    // Insert at target index
+    newPosts.splice(targetIndex, 0, draggedItem);
+    
+    setPosts(newPosts);
+    setDraggedPostId(null);
+    setDragOverPostId(null);
+
+    // Save to DB
+    setIsReordering(true);
+    try {
+      // Create updates where sort_order is based on the new array index
+      // Using a high number for top items so they sort first descendingly (if DB sorts descending)
+      // Actually our getPosts sorts by `sort_order` DESC natively now.
+      const total = newPosts.length;
+      const updates = newPosts.map((post, index) => ({
+        id: post.id,
+        sort_order: total - index
+      }));
+      await updatePostsOrder(updates);
+    } catch (err) {
+      console.error('Error updating order:', err);
+      // Revert if failed (optional, or just refetch)
+      fetchPosts();
+    } finally {
+      setIsReordering(false);
+    }
+  };
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -176,7 +250,7 @@ export const AdminPostsPage: React.FC = () => {
             لم يتم العثور على أي منشورات مطابقة للبحث أو التصفية الحالية.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto ${isReordering ? 'opacity-50 pointer-events-none' : ''}`}>
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-bold">
                 <tr>
@@ -190,9 +264,21 @@ export const AdminPostsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {posts.map((post) => (
-                  <tr key={post.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr 
+                    key={post.id} 
+                    className={`hover:bg-slate-50/70 transition-colors ${dragOverPostId === post.id ? 'border-t-2 border-medical-500 bg-medical-50/20' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, post.id)}
+                    onDragEnter={(e) => handleDragEnter(e, post.id)}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDrop={(e) => handleDrop(e, post.id)}
+                  >
                     <td className="py-4 pr-6 font-bold text-navy-900 max-w-sm">
                       <div className="flex items-center gap-3">
+                        <div className="cursor-move text-slate-300 hover:text-medical-500 transition-colors p-1" title="اسحب لترتيب المنشور">
+                          <GripVertical className="w-5 h-5" />
+                        </div>
                         {post.featured_image && (
                           <img 
                             src={post.featured_image} 

@@ -48,7 +48,7 @@ export const NewsPage: React.FC = () => {
 
   const displayedPosts = selectedCategory === 'all' 
     ? posts 
-    : posts.filter(p => p.categories?.some(c => c.slug === selectedCategory));
+    : posts.filter(p => p.categories?.some(c => c.slug === selectedCategory) || p.metadata?.categories?.includes(selectedCategory));
 
   return (
     <div className="py-10 sm:py-16 bg-slate-50 min-h-screen">

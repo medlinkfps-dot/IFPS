@@ -135,7 +135,7 @@ export async function createContentType(type: Omit<ContentType, 'id'>): Promise<
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     store.content_types.push(newType);
     appendAuditLog(store, 'CREATE', 'section', newType.id, { name: newType.name_ar });
     await saveBlobStore(store);
@@ -162,7 +162,7 @@ export async function updateContentType(id: string, updates: Partial<ContentType
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const index = store.content_types.findIndex(t => t.id === id);
     if (index !== -1) {
       store.content_types[index] = { ...store.content_types[index], ...updates };
@@ -229,7 +229,7 @@ export async function createCategory(category: Omit<Category, 'id'>): Promise<Ca
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     store.categories.push(newCat);
     appendAuditLog(store, 'CREATE', 'category', newCat.id, { name: newCat.name_ar });
     await saveBlobStore(store);
@@ -284,6 +284,7 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
     }
 
     query = query.order('is_pinned', { ascending: false })
+                 .order('sort_order', { ascending: false, nullsFirst: false })
                  .order('published_at', { ascending: false })
                  .range(offset, offset + limit - 1);
 
@@ -311,7 +312,10 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
   all = all.filter(p => !p.deleted_at);
 
   if (contentTypeSlug && contentTypeSlug !== 'all') {
-    all = all.filter(p => p.content_type_slug === contentTypeSlug);
+    all = all.filter(p => 
+      p.content_type_slug === contentTypeSlug || 
+      (p.metadata?.additional_sections && p.metadata.additional_sections.includes(contentTypeSlug))
+    );
   }
   if (status && status !== 'all') {
     all = all.filter(p => p.status === status);
@@ -329,9 +333,12 @@ export async function getPosts(options: GetPostsOptions = {}): Promise<{ posts: 
     );
   }
 
-  // Sort pinned first, then by published date descending
+  // Sort pinned first, then by sort_order, then by published date descending
   all.sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+    const orderA = a.sort_order || 0;
+    const orderB = b.sort_order || 0;
+    if (orderA !== orderB) return orderB - orderA;
     const dateA = new Date(a.published_at || a.created_at).getTime();
     const dateB = new Date(b.published_at || b.created_at).getTime();
     return dateB - dateA;
@@ -364,7 +371,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     let store = await getBlobStore();
     let found = store.posts.find(p => p.slug === slug && !p.deleted_at);
     if (!found) {
-      store = await getBlobStore(true);
+      store = await getBlobStore();
       found = store.posts.find(p => p.slug === slug && !p.deleted_at);
     }
     return found || null;
@@ -396,7 +403,7 @@ export async function getPostById(id: string): Promise<Post | null> {
     let store = await getBlobStore();
     let found = store.posts.find(p => p.id === id);
     if (!found) {
-      store = await getBlobStore(true);
+      store = await getBlobStore();
       found = store.posts.find(p => p.id === id);
     }
     return found || null;
@@ -469,7 +476,7 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     store.posts.unshift(newPost);
     appendAuditLog(store, 'CREATE', 'post', newPost.id, { title: newPost.title_ar });
     await saveBlobStore(store);
@@ -518,7 +525,7 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const index = store.posts.findIndex(p => p.id === id);
     if (index !== -1) {
       store.posts[index] = { ...store.posts[index], ...cleanUpdates };
@@ -541,6 +548,38 @@ export async function updatePost(id: string, updates: Partial<Post>): Promise<Po
   throw new Error('Post not found');
 }
 
+export async function updatePostsOrder(updates: { id: string; sort_order: number }[]): Promise<void> {
+  if (isSupabaseConfigured) {
+    // Supabase bulk update is tricky without a stored procedure, we do them sequentially
+    // Since this is admin only, it's acceptable.
+    for (const update of updates) {
+      await supabase.from('posts').update({ sort_order: update.sort_order }).eq('id', update.id);
+    }
+    broadcastContentUpdate('posts');
+    return;
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    updates.forEach(u => {
+      const p = store.posts.find(x => x.id === u.id);
+      if (p) p.sort_order = u.sort_order;
+    });
+    await saveBlobStore(store);
+    broadcastContentUpdate('posts');
+    return;
+  }
+
+  // Local storage fallback
+  let all = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
+  updates.forEach(u => {
+    const p = all.find(x => x.id === u.id);
+    if (p) p.sort_order = u.sort_order;
+  });
+  setStoredData(STORAGE_KEYS.POSTS, all);
+  broadcastContentUpdate('posts');
+}
+
 export async function deletePost(id: string, softDelete = true): Promise<void> {
   if (isSupabaseConfigured) {
     if (softDelete) {
@@ -554,7 +593,7 @@ export async function deletePost(id: string, softDelete = true): Promise<void> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const target = store.posts.find(x => x.id === id);
     if (softDelete) {
       if (target) target.deleted_at = new Date().toISOString();
@@ -616,7 +655,7 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const updated: SiteSetting = {
       key,
       value_ar,
@@ -681,7 +720,7 @@ export async function saveNavigationItems(items: NavigationItem[]): Promise<Navi
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     store.navigation = items;
     appendAuditLog(store, 'UPDATE', 'setting', 'navigation', { count: items.length });
     await saveBlobStore(store);
@@ -845,18 +884,31 @@ export async function getPDFDocuments(): Promise<PDFDocument[]> {
     const { data, error } = await supabase
       .from('pdf_documents')
       .select('*')
+      .order('sort_order', { ascending: false })
       .order('created_at', { ascending: false });
     if (!error && data) return data;
   }
 
+  let docs: PDFDocument[] = [];
   if (isBlobConfigured) {
     const store = await getBlobStore();
     if (store.documents && store.documents.length > 0) {
-      return store.documents;
+      docs = [...store.documents];
     }
+  } else {
+    docs = getStoredData<PDFDocument[]>(STORAGE_KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
   }
 
-  return getStoredData<PDFDocument[]>(STORAGE_KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
+  docs.sort((a, b) => {
+    const orderA = a.sort_order || 0;
+    const orderB = b.sort_order || 0;
+    if (orderA !== orderB) return orderB - orderA;
+    const dateA = new Date(a.published_date || a.created_at).getTime();
+    const dateB = new Date(b.published_date || b.created_at).getTime();
+    return dateB - dateA;
+  });
+
+  return docs;
 }
 
 export async function createPDFDocument(doc: Omit<PDFDocument, 'id' | 'created_at'>): Promise<PDFDocument> {
@@ -880,7 +932,7 @@ export async function createPDFDocument(doc: Omit<PDFDocument, 'id' | 'created_a
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     store.documents.unshift(newDoc);
     appendAuditLog(store, 'CREATE', 'document', newDoc.id, { title: newDoc.title });
     await saveBlobStore(store);
@@ -910,7 +962,7 @@ export async function updatePDFDocument(id: string, updates: Partial<PDFDocument
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const index = store.documents.findIndex(d => d.id === id);
     if (index !== -1) {
       store.documents[index] = { ...store.documents[index], ...updates };
@@ -937,7 +989,7 @@ export async function deletePDFDocument(id: string): Promise<void> {
   }
 
   if (isBlobConfigured) {
-    const store = await getBlobStore(true);
+    const store = await getBlobStore();
     const target = store.documents.find(d => d.id === id);
     store.documents = store.documents.filter(d => d.id !== id);
     appendAuditLog(store, 'DELETE', 'document', id, { title: target?.title });

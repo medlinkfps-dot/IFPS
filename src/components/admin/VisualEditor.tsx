@@ -19,7 +19,8 @@ import {
   X,
   RefreshCw,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Eraser
 } from 'lucide-react';
 import { uploadImageFile } from '../../lib/imageUtils';
 
@@ -139,6 +140,42 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
         <span className="w-px h-5 bg-slate-300 mx-1" />
 
+        <div className="flex items-center gap-1">
+          <select 
+            onChange={(e) => execCommand('fontSize', e.target.value)}
+            className="p-1 text-xs bg-transparent hover:bg-slate-200 rounded cursor-pointer outline-none border-none"
+            title="حجم النص"
+            defaultValue=""
+          >
+            <option value="" disabled>الحجم</option>
+            <option value="1">صغير جداً</option>
+            <option value="2">صغير</option>
+            <option value="3">عادي</option>
+            <option value="4">كبير</option>
+            <option value="5">أكبر</option>
+            <option value="6">ضخم</option>
+            <option value="7">عملاق</option>
+          </select>
+          <div className="relative group flex items-center justify-center p-1.5 hover:bg-slate-200 rounded cursor-pointer" title="لون النص">
+            <input 
+              type="color"
+              onChange={(e) => execCommand('foreColor', e.target.value)}
+              className="w-5 h-5 p-0 border-0 cursor-pointer bg-transparent"
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => execCommand('removeFormat')}
+          className="p-1.5 hover:bg-slate-200 text-rose-600 rounded transition-colors"
+          title="إزالة التنسيق (مسح الألوان والخلفيات)"
+        >
+          <Eraser className="w-4 h-4" />
+        </button>
+
+        <span className="w-px h-5 bg-slate-300 mx-1" />
+
         <button
           type="button"
           onClick={() => execCommand('bold')}
@@ -253,7 +290,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={12}
-          className="w-full p-4 font-mono text-xs text-slate-800 bg-slate-900 text-slate-100 focus:outline-none resize-y"
+          className="w-full p-4 font-mono text-xs text-slate-800 bg-slate-50 focus:outline-none resize-y"
           dir="ltr"
         />
       ) : (

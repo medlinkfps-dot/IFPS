@@ -39,7 +39,8 @@ export interface PostMetadata {
   event_time?: string;
   venue?: string;
   organizer?: string;
-  registration_status?: 'open' | 'closed' | 'completed' | 'upcoming';
+  registration_status?: 'open' | 'closed' | 'archived' | '';
+  registration_deadline?: string;
   registration_url?: string;
 
   // Course specific
@@ -60,9 +61,14 @@ export interface PostMetadata {
   file_url?: string;
   file_name?: string;
 
-  // News specific
+  // Gallery specific
+  gallery_images?: string[];
+  slider_interval?: number;
+
+  // News / General
   read_time?: string;
   source?: string;
+  additional_sections?: string[]; // IDs or Slugs of other sections to appear in
   [key: string]: any;
 }
 
@@ -84,6 +90,7 @@ export interface Post {
   status: PostStatus;
   is_pinned: boolean;
   is_featured: boolean;
+  sort_order?: number;
   published_at?: string;
   scheduled_for?: string;
   metadata: PostMetadata;
@@ -165,6 +172,7 @@ export interface PDFDocument {
   file_size?: string;
   published_date?: string;
   downloads_count?: number;
+  sort_order?: number;
   is_active: boolean;
   created_at: string;
 }

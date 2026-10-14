@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Mail, 
   MapPin, 
@@ -13,6 +13,18 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleAdminAccess = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const code = window.prompt("الرجاء إدخال الرمز الأمني للولوج:");
+    if (code === "218721") {
+      navigate('/admin/login');
+    } else if (code !== null) {
+      alert("الرمز غير صحيح!");
+    }
+  };
+
   return (
     <footer className="bg-navy-950 text-slate-300 pt-14 pb-10 border-t border-navy-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +110,7 @@ export const Footer: React.FC = () => {
 
               <div className="flex items-center gap-2 text-slate-400">
                 <MapPin className="w-3.5 h-3.5 text-medical-400 shrink-0" />
-                <span>المقر العام: بغداد، جمهورية العراق</span>
+                <span>المقر العام: العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق</span>
               </div>
             </div>
 
@@ -131,13 +143,13 @@ export const Footer: React.FC = () => {
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
           <p>
             © {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS). جميع الحقوق{' '}
-            <Link 
-              to="/admin/login" 
-              className="text-inherit hover:text-inherit focus:outline-none cursor-default select-none"
+            <span 
+              onClick={handleAdminAccess}
+              className="text-inherit hover:text-inherit focus:outline-none cursor-default select-none ml-1"
               tabIndex={-1}
             >
               محفوظة
-            </Link>.
+            </span>.
           </p>
           <div className="flex items-center gap-4">
             <Link to="/about" className="hover:text-slate-400">من نحن</Link>

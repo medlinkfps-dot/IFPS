@@ -75,12 +75,10 @@ export async function optimizeImageFile(file: File, maxDimension = 1920, quality
   });
 }
 
-/**
- * Uploads an image file:
- * - If Supabase Storage is configured, attempts cloud upload to bucket.
- * - Otherwise generates an optimized, high-fidelity Base64 data URL that works permanently offline & online.
- */
 export async function uploadImageFile(file: File, bucket = 'media'): Promise<ProcessedImage> {
+  // First, optimize the image before uploading
+  // Wait, if it's a PDF, optimizeImageFile might fail or it shouldn't be called.
+  // Actually, this is uploadImageFile, so it expects images.
   const optimizedDataUrl = await optimizeImageFile(file);
 
   if (isSupabaseConfigured) {
@@ -105,10 +103,50 @@ export async function uploadImageFile(file: File, bucket = 'media'): Promise<Pro
         }
       }
     } catch (e) {
-      console.warn('Supabase storage upload failed, falling back to optimized data URL:', e);
+      console.warn('Supabase storage upload failed, falling back:', e);
     }
   }
 
+  // Upload to Vercel Blob via our API route
+  try {
+    // Convert data URL back to Blob/File for uploading the optimized version
+    const res = await fetch(optimizedDataUrl);
+    const blob = await res.blob();
+    const optimizedFile = new File([blob], file.name, { type: file.type });
+    
+    // Dynamically import getAdminToken to avoid circular dependencies if any
+    const { getAdminToken } = await import('./auth');
+    const token = getAdminToken();
+    
+    const ext = file.name.split('.').pop() || 'jpg';
+    const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `uploads/${Date.now()}-${cleanName}.${ext}`;
+
+    const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+      method: 'POST',
+      headers: {
+        'x-admin-token': token || '',
+        'Content-Type': file.type,
+      },
+      body: optimizedFile,
+    });
+
+    if (uploadRes.ok) {
+      const data = await uploadRes.json();
+      return {
+        url: data.url, // Vercel Blob returns a URL
+        name: file.name,
+        size: optimizedFile.size,
+        type: file.type,
+      };
+    } else {
+      console.error('Vercel Blob upload failed:', await uploadRes.text());
+    }
+  } catch (err) {
+    console.error('API upload error:', err);
+  }
+
+  // Fallback to data URL
   return {
     url: optimizedDataUrl,
     name: file.name,

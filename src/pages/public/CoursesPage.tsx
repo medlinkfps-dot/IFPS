@@ -6,6 +6,7 @@ import { Post } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { getDerivedRegistrationStatus } from '../../lib/statusUtils';
 
 export const CoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Post[]>([]);
@@ -99,13 +100,35 @@ export const CoursesPage: React.FC = () => {
                 className="bg-white rounded-3xl border border-slate-100 shadow-soft hover:shadow-md transition-all flex flex-col justify-between p-6 group"
               >
                 <div className="space-y-3">
+                  {course.featured_image && (
+                    <Link to={`/courses/${course.slug}`} className="block mb-4 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 relative group-hover:shadow-sm transition-all h-40">
+                      <img 
+                        src={course.featured_image} 
+                        alt={course.title_ar} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </Link>
+                  )}
+                  
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold text-medical-700 bg-medical-50 px-2.5 py-0.5 rounded-full">
                       {course.metadata?.cpd_hours ? `${course.metadata.cpd_hours} ساعات معتمدة` : 'دورة تخصصية'}
                     </span>
-                    <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                      التسجيل متاح
-                    </span>
+                    {getDerivedRegistrationStatus(course) === 'open' && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        التسجيل مفتوح
+                      </span>
+                    )}
+                    {getDerivedRegistrationStatus(course) === 'closed' && (
+                      <span className="text-[11px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+                        التسجيل انتهى
+                      </span>
+                    )}
+                    {getDerivedRegistrationStatus(course) === 'archived' && (
+                      <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full">
+                        مؤرشفة
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="font-bold text-navy-900 text-base leading-snug group-hover:text-medical-600 transition-colors">

@@ -26,7 +26,23 @@ export const NewsDetailPage: React.FC = () => {
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const displayImages = post?.metadata?.gallery_images?.length 
+    ? post.metadata.gallery_images 
+    : [post?.featured_image].filter(Boolean) as string[];
+
+  useEffect(() => {
+    if (!displayImages || displayImages.length <= 1) return;
+    
+    const interval = (post?.metadata?.slider_interval || 3) * 1000;
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [displayImages.length, post?.metadata?.slider_interval]);
   useEffect(() => {
     async function loadPost() {
       if (!slug) return;
@@ -147,14 +163,46 @@ export const NewsDetailPage: React.FC = () => {
             </div>
           </header>
 
-          {/* Featured Image */}
-          {post.featured_image && (
-            <div className="mb-8 rounded-2xl overflow-hidden shadow-sm">
-              <img 
-                src={post.featured_image} 
-                alt={post.title_ar} 
-                className="w-full h-auto max-h-[460px] object-cover"
-              />
+          {/* Featured Image / Gallery Slider */}
+          {displayImages.length > 0 && (
+            <div className={`mb-8 rounded-2xl overflow-hidden shadow-sm relative group ${
+              post.metadata?.image_display_style === 'contain' ? 'bg-slate-100 flex flex-col items-center justify-center' : ''
+            }`}>
+              <div className="relative w-full overflow-hidden cursor-zoom-in" onClick={() => setFullscreenImage(displayImages[currentImageIndex])}>
+                <img 
+                  key={currentImageIndex} // forces re-render/animation if needed, though state change alone is fine
+                  src={displayImages[currentImageIndex]} 
+                  alt={`${post.title_ar} - صورة ${currentImageIndex + 1}`} 
+                  className={`w-full transition-transform hover:opacity-95 animate-fade-in ${
+                    post.metadata?.image_display_style === 'auto'
+                      ? 'h-auto object-contain'
+                      : post.metadata?.image_display_style === 'contain'
+                        ? 'h-auto max-h-[600px] object-contain'
+                        : 'h-[300px] sm:h-[460px] object-cover'
+                  }`}
+                />
+              </div>
+
+              {/* Slider Dots */}
+              {displayImages.length > 1 && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
+                  {displayImages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(idx);
+                      }}
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 shadow-sm ${
+                        currentImageIndex === idx 
+                          ? 'bg-medical-600 scale-125' 
+                          : 'bg-white/70 hover:bg-white'
+                      }`}
+                      aria-label={`الانتقال للصورة رقم ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -236,6 +284,26 @@ export const NewsDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Fullscreen Image Lightbox */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 cursor-zoom-out"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <img 
+            src={fullscreenImage} 
+            alt="Full size preview" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          />
+          <button 
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+            onClick={(e) => { e.stopPropagation(); setFullscreenImage(null); }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 };
