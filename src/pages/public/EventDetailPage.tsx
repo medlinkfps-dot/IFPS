@@ -8,6 +8,7 @@ import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { getDerivedRegistrationStatus } from '../../lib/statusUtils';
+import { AttachedFormCard } from '../../components/common/AttachedFormCard';
 
 export const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -205,6 +206,12 @@ export const EventDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={event.content_ar} />
           </div>
+
+          {/* Attached Survey / Form (DTform) */}
+          <AttachedFormCard 
+            formId={event.metadata?.attached_form_id} 
+            formSlug={event.metadata?.attached_form_slug} 
+          />
 
           <div className="mt-12 pt-6 border-t border-slate-100 flex items-center justify-between">
             <Link

@@ -22,10 +22,12 @@ import {
   Settings,
   Calendar,
   HelpCircle,
-  GripVertical
+  GripVertical,
+  Layers,
+  Tag
 } from 'lucide-react';
-import { getFormById, createForm, updateForm } from '../../lib/db';
-import { CustomForm, FormField, FormFieldType } from '../../types';
+import { getFormById, createForm, updateForm, getContentTypes, getCategories } from '../../lib/db';
+import { CustomForm, FormField, FormFieldType, ContentType, Category } from '../../types';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 export const AdminFormEditorPage: React.FC = () => {
@@ -33,7 +35,7 @@ export const AdminFormEditorPage: React.FC = () => {
   const navigate = useNavigate();
   const isEditing = Boolean(id);
 
-  const [loading, setLoading] = useState(isEditing);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,13 +48,22 @@ export const AdminFormEditorPage: React.FC = () => {
   const [submitButtonText, setSubmitButtonText] = useState('إرسال الاستمارة');
   const [successMessage, setSuccessMessage] = useState('تم استلام ردك بنجاح. شكراً لمشاركتك معنا!');
 
+  // Publishing Sections & Categories
+  const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [sectionId, setSectionId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+
   // Form Fields State
   const [fields, setFields] = useState<FormField[]>([]);
 
   useEffect(() => {
-    if (isEditing && id) {
-      const loadForm = async () => {
-        try {
+    const init = async () => {
+      try {
+        const types = await getContentTypes();
+        setContentTypes(types);
+
+        if (isEditing && id) {
           const form = await getFormById(id);
           if (form) {
             setTitle(form.title);
@@ -62,45 +73,68 @@ export const AdminFormEditorPage: React.FC = () => {
             setDeadline(form.deadline || '');
             setSubmitButtonText(form.submit_button_text || 'إرسال الاستمارة');
             setSuccessMessage(form.success_message || 'تم استلام ردك بنجاح. شكراً لمشاركتك معنا!');
+            setSectionId(form.section_id || '');
+            setCategoryId(form.category_id || '');
             setFields(form.fields || []);
+
+            if (form.section_id) {
+              const cats = await getCategories(form.section_id);
+              setAvailableCategories(cats);
+            }
           } else {
             setError('الاستمارة المطلوبة غير موجودة');
           }
-        } catch (err) {
-          console.error(err);
-          setError('فشل في تحميل بيانات الاستمارة');
-        } finally {
-          setLoading(false);
+        } else {
+          // Default initial fields for a new form
+          setFields([
+            {
+              id: `field-${Date.now()}-1`,
+              label: 'الاسم الثلاثي واللقب',
+              type: 'text',
+              placeholder: 'أدخل اسمك الكامل...',
+              required: true,
+            },
+            {
+              id: `field-${Date.now()}-2`,
+              label: 'رقم الهاتف (واتساب)',
+              type: 'phone',
+              placeholder: '07xxxxxxxxx',
+              required: true,
+            },
+            {
+              id: `field-${Date.now()}-3`,
+              label: 'البريد الإلكتروني',
+              type: 'email',
+              placeholder: 'example@domain.com',
+              required: false,
+            }
+          ]);
         }
-      };
-      loadForm();
-    } else {
-      // Default initial fields for a new form
-      setFields([
-        {
-          id: `field-${Date.now()}-1`,
-          label: 'الاسم الثلاثي واللقب',
-          type: 'text',
-          placeholder: 'أدخل اسمك الكامل...',
-          required: true,
-        },
-        {
-          id: `field-${Date.now()}-2`,
-          label: 'رقم الهاتف (واتساب)',
-          type: 'phone',
-          placeholder: '07xxxxxxxxx',
-          required: true,
-        },
-        {
-          id: `field-${Date.now()}-3`,
-          label: 'البريد الإلكتروني',
-          type: 'email',
-          placeholder: 'example@domain.com',
-          required: false,
-        }
-      ]);
-    }
+      } catch (err) {
+        console.error(err);
+        setError('فشل في تحميل بيانات الاستمارة');
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, [id, isEditing]);
+
+  // When sectionId changes, load categories
+  const handleSectionChange = async (newSectionId: string) => {
+    setSectionId(newSectionId);
+    setCategoryId('');
+    if (newSectionId) {
+      try {
+        const cats = await getCategories(newSectionId);
+        setAvailableCategories(cats);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    } else {
+      setAvailableCategories([]);
+    }
+  };
 
   // Auto-generate slug from title if new
   const handleTitleChange = (val: string) => {
@@ -235,6 +269,10 @@ export const AdminFormEditorPage: React.FC = () => {
         deadline: deadline || undefined,
         submit_button_text: submitButtonText.trim() || 'إرسال الاستمارة',
         success_message: successMessage.trim() || 'تم استلام ردك بنجاح. شكراً لك!',
+        section_id: sectionId || undefined,
+        section_slug: contentTypes.find(t => t.id === sectionId)?.slug || undefined,
+        category_id: categoryId || undefined,
+        category_slug: availableCategories.find(c => c.id === categoryId)?.slug || undefined,
         fields,
       };
 
@@ -375,6 +413,59 @@ export const AdminFormEditorPage: React.FC = () => {
               placeholder="اكتب تعليمات للمشاركين أو شروط التقديم لتظهر في بداية الاستمارة..."
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all leading-relaxed"
             />
+          </div>
+
+          {/* Publishing Section & Category Selector */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <Layers className="w-4 h-4 text-teal-600" />
+              <span>نشر وتصنيف الاستبيان داخل أحد أقسام الموقع (حسب رغبة الإدارة أو تركه مستقلاً):</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  القسم الرئيسي
+                </label>
+                <select
+                  value={sectionId}
+                  onChange={(e) => handleSectionChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">بدون قسم رئيسي (استبيان مستقل برابط فقط)</option>
+                  {contentTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name_ar}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  اختر إذا كنت ترغب بربط هذا الاستبيان بأحد أقسام الموقع (مثل: الأخبار، الفعاليات، الدورات).
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  القسم الفرعي (التصنيف)
+                </label>
+                <select
+                  disabled={!sectionId || availableCategories.length === 0}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+                >
+                  <option value="">بدون تصنيف فرعي (عام في هذا القسم)</option>
+                  {availableCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name_ar}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {sectionId ? 'حدد التصنيف الفرعي المناسب داخل القسم.' : 'يتطلب اختيار قسم رئيسي أولاً.'}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">

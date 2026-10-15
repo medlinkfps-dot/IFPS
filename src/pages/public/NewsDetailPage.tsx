@@ -18,6 +18,7 @@ import { SEO } from '../../components/common/SEO';
 import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { AttachedFormCard } from '../../components/common/AttachedFormCard';
 
 export const NewsDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -235,6 +236,12 @@ export const NewsDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={post.content_ar} />
           </div>
+
+          {/* Attached Survey / Form (DTform) */}
+          <AttachedFormCard 
+            formId={post.metadata?.attached_form_id} 
+            formSlug={post.metadata?.attached_form_slug} 
+          />
 
           {/* Back Navigation */}
           <div className="mt-12 pt-6 border-t border-slate-100 flex items-center justify-between">

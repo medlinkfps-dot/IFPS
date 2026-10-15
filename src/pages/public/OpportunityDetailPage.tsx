@@ -7,6 +7,7 @@ import { SEO } from '../../components/common/SEO';
 import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { AttachedFormCard } from '../../components/common/AttachedFormCard';
 
 export const OpportunityDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -129,6 +130,12 @@ export const OpportunityDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={opp.content_ar} />
           </div>
+
+          {/* Attached Survey / Form (DTform) */}
+          <AttachedFormCard 
+            formId={opp.metadata?.attached_form_id} 
+            formSlug={opp.metadata?.attached_form_slug} 
+          />
 
           <div className="mt-12 pt-6 border-t border-slate-100 flex items-center justify-between">
             <Link

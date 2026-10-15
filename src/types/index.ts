@@ -68,6 +68,10 @@ export interface PostMetadata {
   // News / General
   read_time?: string;
   source?: string;
+  // Attached Survey / Form (DTform)
+  attached_form_id?: string;
+  attached_form_slug?: string;
+
   additional_sections?: string[]; // IDs or Slugs of other sections to appear in
   [key: string]: any;
 }
@@ -213,6 +217,10 @@ export interface CustomForm {
   allow_multiple_submissions?: boolean;
   view_count?: number;
   submission_count?: number;
+  section_id?: string;
+  section_slug?: string;
+  category_id?: string;
+  category_slug?: string;
   created_at: string;
   updated_at: string;
 }

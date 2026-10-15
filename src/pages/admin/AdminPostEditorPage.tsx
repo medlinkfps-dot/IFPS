@@ -15,10 +15,11 @@ import {
   Layers,
   FileText,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  ClipboardList
 } from 'lucide-react';
-import { getPostById, createPost, updatePost, getContentTypes, getCategories } from '../../lib/db';
-import { Post, ContentType, PostStatus, Category } from '../../types';
+import { getPostById, createPost, updatePost, getContentTypes, getCategories, getForms } from '../../lib/db';
+import { Post, ContentType, PostStatus, Category, CustomForm } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { VisualEditor } from '../../components/admin/VisualEditor';
 import { PostPreviewModal } from '../../components/admin/PostPreviewModal';
@@ -61,14 +62,22 @@ export const AdminPostEditorPage: React.FC = () => {
   const [registrationStatus, setRegistrationStatus] = useState<'open' | 'closed' | 'archived' | ''>('');
   const [registrationDeadline, setRegistrationDeadline] = useState('');
 
+  // Attached Custom Form (DTform)
+  const [availableForms, setAvailableForms] = useState<CustomForm[]>([]);
+  const [attachedFormId, setAttachedFormId] = useState('');
+
   // Metadata State
   const [metadata, setMetadata] = useState<Record<string, any>>({});
 
   useEffect(() => {
     async function initEditor() {
       try {
-        const types = await getContentTypes();
+        const [types, forms] = await Promise.all([
+          getContentTypes(),
+          getForms()
+        ]);
         setContentTypes(types);
+        setAvailableForms(forms);
 
         if (isEditing && id) {
           const post = await getPostById(id);
@@ -96,6 +105,7 @@ export const AdminPostEditorPage: React.FC = () => {
             setSelectedCategories(post.metadata?.categories || []);
             setRegistrationStatus(post.metadata?.registration_status || '');
             setRegistrationDeadline(post.metadata?.registration_deadline || '');
+            setAttachedFormId(post.metadata?.attached_form_id || '');
           }
         } else if (types.length > 0) {
           setContentTypeId(types[0].id);
@@ -158,7 +168,17 @@ export const AdminPostEditorPage: React.FC = () => {
       author_name: authorName.trim() || 'الإعلام والتواصل الرقمي',
       sort_order: sortOrder,
       published_at: customPublishDate ? new Date(customPublishDate).toISOString() : undefined,
-      metadata: { ...metadata, gallery_images: galleryImages, slider_interval: sliderInterval, additional_sections: additionalSections, categories: selectedCategories, registration_status: registrationStatus, registration_deadline: registrationDeadline },
+      metadata: { 
+        ...metadata, 
+        gallery_images: galleryImages, 
+        slider_interval: sliderInterval, 
+        additional_sections: additionalSections, 
+        categories: selectedCategories, 
+        registration_status: registrationStatus, 
+        registration_deadline: registrationDeadline,
+        attached_form_id: attachedFormId || undefined,
+        attached_form_slug: availableForms.find(f => f.id === attachedFormId)?.slug || undefined
+      },
       seo_title: seoTitle.trim() || titleAr.trim(),
       seo_description: seoDescription.trim() || summaryAr.trim(),
     };
@@ -746,6 +766,85 @@ export const AdminPostEditorPage: React.FC = () => {
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-medical-500"
               />
               <p className="text-[10px] text-slate-400 mt-1">الأرقام الأعلى تظهر أولاً (مثلاً: 10 يظهر قبل 0).</p>
+            </div>
+          </div>
+
+          {/* Attached Custom Form / Survey (DTform) */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-teal-600" />
+                <h3 className="text-sm font-bold text-navy-900">إرفاق استمارة أو استبيان (DTform)</h3>
+              </div>
+              {attachedFormId && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-bold border border-teal-200">
+                  مُرفق بالمنشور
+                </span>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              يمكنك ربط هذا المنشور بأحد الاستبيانات أو استمارات التسجيل المحفوظة ليظهر للمشاركين داخل المنشور مباشرة.
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                اختر الاستبيان المحفوظ
+              </label>
+              <select
+                value={attachedFormId}
+                onChange={(e) => setAttachedFormId(e.target.value)}
+                className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-1 focus:ring-teal-500"
+              >
+                <option value="">بدون استبيان (لا يوجد استمارة ملحقة)</option>
+                {availableForms.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.title} ({f.status === 'open' ? 'مفتوحة للتقديم' : 'مغلقة'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {attachedFormId && (
+              <div className="p-3.5 bg-teal-50/70 rounded-2xl border border-teal-200/60 text-xs space-y-2">
+                {(() => {
+                  const selectedForm = availableForms.find(f => f.id === attachedFormId);
+                  if (!selectedForm) return null;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-teal-950">{selectedForm.title}</span>
+                        <span className="text-[10px] px-2 py-0.5 bg-white rounded-md text-teal-700 font-bold border border-teal-200">
+                          {selectedForm.status === 'open' ? 'نشط' : 'مغلق'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-teal-700 pt-1 border-t border-teal-200/50">
+                        <span>الردود المستلمة: {selectedForm.submission_count || 0}</span>
+                        <a
+                          href={`/forms/${selectedForm.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-bold underline hover:text-teal-900"
+                        >
+                          <span>معاينة الرابط</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              <span className="text-slate-400">تريد استمارة جديدة؟</span>
+              <Link
+                to="/admin/forms/new"
+                target="_blank"
+                className="text-teal-600 hover:text-teal-700 font-bold hover:underline"
+              >
+                + إنشاء استمارة جديدة الآن
+              </Link>
             </div>
           </div>
 
