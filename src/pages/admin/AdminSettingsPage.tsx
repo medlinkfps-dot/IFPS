@@ -10,7 +10,11 @@ import {
   ShieldCheck,
   Sparkles,
   UserCheck,
-  CheckCircle2
+  CheckCircle2,
+  KeyRound,
+  Lock,
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { getSettings, updateSetting } from '../../lib/db';
 import { SiteSetting } from '../../types';
@@ -23,6 +27,11 @@ export const AdminSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Security PIN Verification Modal
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
 
   // Form Fields
   const [siteName, setSiteName] = useState('');
@@ -68,8 +77,24 @@ export const AdminSettingsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleSave = async (e?: React.FormEvent) => {
+  const handleRequestSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setPinInput('');
+    setPinError(null);
+    setShowPinModal(true);
+  };
+
+  const handleConfirmPin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (pinInput.trim() !== '40142142') {
+      setPinError('رمز التطبيق السري غير صحيح! يرجى إدخال الرمز المعتمد (40142142).');
+      return;
+    }
+    setShowPinModal(false);
+    await executeSave();
+  };
+
+  const executeSave = async () => {
     setSaving(true);
     try {
       await Promise.all([
@@ -112,7 +137,7 @@ export const AdminSettingsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => handleSave()}
+          onClick={() => handleRequestSave()}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black rounded-xl text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
           title="تطبيق جميع الإعدادات فوراً على الموقع مباشرة"
@@ -134,7 +159,7 @@ export const AdminSettingsPage: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-8">
+      <form onSubmit={handleRequestSave} className="space-y-8">
         {/* 1. General Identity */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft space-y-4">
           <h2 className="text-base font-bold text-navy-900 border-b border-slate-100 pb-3">
@@ -381,7 +406,7 @@ export const AdminSettingsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>سيتم تطبيق جميع التعديلات المحفوظة فوراً على الموقع الحي.</span>
+            <span>سيتم تطبيق جميع التعديلات المحفوظة فوراً على الموقع الحي بعد التحقق الأمني.</span>
           </div>
 
           <button
@@ -394,6 +419,87 @@ export const AdminSettingsPage: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Security PIN Verification Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" dir="rtl">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 p-6 text-white relative">
+              <button
+                type="button"
+                onClick={() => setShowPinModal(false)}
+                className="absolute top-4 left-4 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="إغلاق"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">التحقق الأمني لتطبيق الإعدادات</h3>
+                  <p className="text-xs text-slate-300 mt-0.5">يرجى إدخال الرمز الخاص لاعتماد وتطبيق التعديلات</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleConfirmPin} className="p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  الرمز الخاص للتطبيق (Security PIN)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="password"
+                    autoFocus
+                    value={pinInput}
+                    onChange={(e) => {
+                      setPinInput(e.target.value);
+                      if (pinError) setPinError(null);
+                    }}
+                    placeholder="أدخل الرمز السري الخاص..."
+                    className="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-base font-mono tracking-widest text-center focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all font-bold text-navy-900"
+                    dir="ltr"
+                  />
+                </div>
+                {pinError && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-rose-700 font-semibold bg-rose-50 border border-rose-200 p-3 rounded-xl">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    <span>{pinError}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 leading-relaxed">
+                🛡️ لا يمكن حفظ أو تطبيق أي تعديلات في هوية وإعدادات الموقع الرسمية دون إدخال الرمز الخاص المعتمد لحماية الموقع من التغييرات غير المصرح بها.
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPinModal(false)}
+                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>تأكيد وتطبيق التعديلات</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
