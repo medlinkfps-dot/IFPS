@@ -162,6 +162,11 @@ export const AboutPage: React.FC = () => {
             </div>
 
             <div className="text-xs sm:text-sm text-slate-600 leading-relaxed space-y-2.5 pt-2 border-t border-slate-50 font-normal">
+              {settings['president_quote']?.value_ar ? (
+                <p className="font-medium text-slate-800 italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  "{settings['president_quote'].value_ar}"
+                </p>
+              ) : null}
               <p>
                 "يسعدني أن أرحب بكم في الموقع الرسمي لجمعية أطباء الأسرة العراقية. يقف العراق اليوم أمام مرحلة مفصلية مع تطبيق قانون الضمان الصحي الوطني، والذي يعتمد بصورة أساسية على طبيب الأسرة كنقطة ارتكاز أولى."
               </p>

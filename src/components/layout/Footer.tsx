@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Mail, 
@@ -11,9 +11,34 @@ import {
   Award,
   FileDown
 } from 'lucide-react';
+import { getSettings } from '../../lib/db';
+import { SiteSetting } from '../../types';
 
 export const Footer: React.FC = () => {
   const navigate = useNavigate();
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const data = await getSettings();
+        setSettings(data);
+      } catch (e) {
+        console.error('Error loading settings in footer:', e);
+      }
+    }
+    loadSettings();
+
+    const handleUpdate = () => {
+      loadSettings();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   const handleAdminAccess = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -24,6 +49,18 @@ export const Footer: React.FC = () => {
       alert("الرمز غير صحيح!");
     }
   };
+
+  const siteName = settings['site_name']?.value_ar || 'جمعية أطباء الأسرة العراقية';
+  const siteNameEn = settings['site_name']?.value_en || 'Iraqi Family Physicians Society • IFPS';
+  const logoUrl = settings['official_logo_url']?.value_ar || '/fps.png';
+  const email = settings['official_email']?.value_ar || 'info@iraqifps.org';
+  const address = settings['headquarters_city']?.value_ar || 'العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق';
+  
+  const rawFb = settings['facebook_handle']?.value_ar || 'iraqi.fps';
+  const fbUrl = rawFb.startsWith('http') ? rawFb : `https://facebook.com/${rawFb}`;
+  
+  const rawInsta = settings['instagram_handle']?.value_ar || 'iraqi.fps';
+  const instaUrl = rawInsta.startsWith('http') ? rawInsta : `https://instagram.com/${rawInsta}`;
 
   return (
     <footer className="bg-navy-950 text-slate-300 pt-14 pb-10 border-t border-navy-900">
@@ -37,17 +74,17 @@ export const Footer: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-sm">
                 <img 
-                  src="/fps.png" 
-                  alt="شعار جمعية أطباء الأسرة العراقية" 
+                  src={logoUrl} 
+                  alt={siteName} 
                   className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base leading-snug">
-                  جمعية أطباء الأسرة العراقية
+                  {siteName}
                 </h3>
                 <p className="text-[11px] text-medical-300 font-sans tracking-wide">
-                  Iraqi Family Physicians Society • IFPS
+                  {siteNameEn}
                 </p>
               </div>
             </div>
@@ -103,21 +140,21 @@ export const Footer: React.FC = () => {
 
               <div className="flex items-center gap-2 text-slate-400 pt-1">
                 <Mail className="w-3.5 h-3.5 text-medical-400 shrink-0" />
-                <a href="mailto:info@iraqifps.org" className="hover:text-white transition-colors">
-                  info@iraqifps.org
+                <a href={`mailto:${email}`} className="hover:text-white transition-colors">
+                  {email}
                 </a>
               </div>
 
               <div className="flex items-center gap-2 text-slate-400">
                 <MapPin className="w-3.5 h-3.5 text-medical-400 shrink-0" />
-                <span>المقر العام: العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق</span>
+                <span>{address}</span>
               </div>
             </div>
 
             {/* Social Icons */}
             <div className="pt-2 flex items-center gap-2">
               <a
-                href="https://facebook.com/iraqi.fps"
+                href={fbUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-300 hover:text-white transition-colors"
@@ -126,7 +163,7 @@ export const Footer: React.FC = () => {
                 <Facebook className="w-4 h-4" />
               </a>
               <a
-                href="https://instagram.com/iraqi.fps"
+                href={instaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-300 hover:text-white transition-colors"
@@ -142,7 +179,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Credits */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
           <p>
-            © {new Date().getFullYear()} جمعية أطباء الأسرة العراقية (IFPS). جميع الحقوق{' '}
+            © {new Date().getFullYear()} {siteName}. جميع الحقوق{' '}
             <span 
               onClick={handleAdminAccess}
               className="text-inherit hover:text-inherit focus:outline-none cursor-default select-none ml-1"

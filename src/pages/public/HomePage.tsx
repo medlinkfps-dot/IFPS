@@ -104,7 +104,7 @@ export const HomePage: React.FC = () => {
 
                 {/* Clean, Concise Subtitle */}
                 <p className="text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-                  نقود تطوير الرعاية الصحية الأولية في العراق عبر برامج التدريب المستمر (CPD-s)، تعزيز البحث العلمي، والشراكة الدولية الفاعلة مع منظمة WONCA العالمية.
+                  {settings['site_tagline']?.value_ar || 'نقود تطوير الرعاية الصحية الأولية في العراق عبر برامج التدريب المستمر (CPD-s)، تعزيز البحث العلمي، والشراكة الدولية الفاعلة مع منظمة WONCA العالمية.'}
                 </p>
 
                 {/* Action Buttons */}
@@ -162,16 +162,16 @@ export const HomePage: React.FC = () => {
                   <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 p-2 bg-white rounded-3xl shadow-lg flex items-center justify-center">
                     <img 
                       src={emblemUrl} 
-                      alt="شعار جمعية أطباء الأسرة العراقية" 
+                      alt={settings['site_name']?.value_ar || 'جمعية أطباء الأسرة العراقية'} 
                       className="w-full h-full object-contain"
                     />
                   </div>
 
                   <h2 className="text-white font-black text-lg mb-1">
-                    جمعية أطباء الأسرة العراقية
+                    {settings['site_name']?.value_ar || 'جمعية أطباء الأسرة العراقية'}
                   </h2>
                   <p className="text-xs text-medical-300 font-sans tracking-wide mb-5">
-                    Iraqi Family Physicians Society • IFPS
+                    {settings['site_name']?.value_en || 'Iraqi Family Physicians Society • IFPS'}
                   </p>
 
                   <div className="bg-navy-950/60 rounded-2xl p-4 border border-white/10 text-right space-y-2">

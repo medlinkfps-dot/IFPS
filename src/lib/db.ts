@@ -692,6 +692,60 @@ export async function updateSetting(key: string, value_ar: string, value_en?: st
   return updated;
 }
 
+export async function updateSettingsBulk(
+  settingsMap: Record<string, { value_ar: string; value_en?: string }>
+): Promise<Record<string, SiteSetting>> {
+  if (isSupabaseConfigured) {
+    const upsertRows = Object.entries(settingsMap).map(([key, val]) => ({
+      key,
+      value_ar: val.value_ar,
+      value_en: val.value_en,
+      updated_at: new Date().toISOString(),
+    }));
+    await supabase.from('site_settings').upsert(upsertRows);
+    broadcastContentUpdate('settings');
+  }
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore(true);
+    if (!store.settings) store.settings = {};
+    
+    Object.entries(settingsMap).forEach(([key, val]) => {
+      store.settings[key] = {
+        key,
+        value_ar: val.value_ar,
+        value_en: val.value_en !== undefined ? val.value_en : (store.settings[key]?.value_en || ''),
+        description: store.settings[key]?.description || '',
+        category: store.settings[key]?.category || 'general',
+        is_public: true,
+        updated_at: new Date().toISOString(),
+      };
+    });
+
+    appendAuditLog(store, 'SETTINGS_UPDATE', 'setting', 'bulk', { count: Object.keys(settingsMap).length });
+    await saveBlobStore(store);
+    broadcastContentUpdate('settings');
+    return store.settings;
+  }
+
+  const settings = await getSettings();
+  Object.entries(settingsMap).forEach(([key, val]) => {
+    settings[key] = {
+      key,
+      value_ar: val.value_ar,
+      value_en: val.value_en !== undefined ? val.value_en : (settings[key]?.value_en || ''),
+      description: settings[key]?.description || '',
+      category: settings[key]?.category || 'general',
+      is_public: true,
+      updated_at: new Date().toISOString(),
+    };
+  });
+  setStoredData(STORAGE_KEYS.SETTINGS, settings);
+  await logAdminAction('SETTINGS_UPDATE', 'setting', 'bulk', { count: Object.keys(settingsMap).length });
+  broadcastContentUpdate('settings');
+  return settings;
+}
+
 // ------------------------------------------------------------------------------
 // 5. NAVIGATION ITEMS
 // ------------------------------------------------------------------------------

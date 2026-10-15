@@ -82,6 +82,8 @@ export const Navbar: React.FC = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const siteName = settings['site_name']?.value_ar || 'جمعية أطباء الأسرة العراقية';
+  const siteNameEn = settings['site_name']?.value_en || 'Iraqi Family Physicians Society';
   const logoUrl = settings['official_logo_url']?.value_ar || '/fps.png';
 
   return (
@@ -99,21 +101,21 @@ export const Navbar: React.FC = () => {
           <Link 
             to="/" 
             className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-medical-500 rounded-2xl p-1 -m-1"
-            aria-label="الرئيسية - جمعية أطباء الأسرة العراقية"
+            aria-label={`الرئيسية - ${siteName}`}
           >
             <div className="relative w-11 h-11 sm:w-13 sm:h-13 shrink-0 flex items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 p-1 group-hover:border-medical-200 transition-colors">
               <img 
                 src={logoUrl} 
-                alt="شعار جمعية أطباء الأسرة العراقية" 
+                alt={siteName} 
                 className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-navy-900 text-sm sm:text-base leading-tight tracking-tight">
-                جمعية أطباء الأسرة العراقية
+                {siteName}
               </span>
               <span className="text-[10px] sm:text-[11px] text-slate-400 font-sans tracking-wide font-medium">
-                Iraqi Family Physicians Society
+                {siteNameEn}
               </span>
             </div>
           </Link>

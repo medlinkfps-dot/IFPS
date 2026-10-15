@@ -16,7 +16,7 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
-import { getSettings, updateSetting } from '../../lib/db';
+import { getSettings, updateSettingsBulk } from '../../lib/db';
 import { SiteSetting } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -97,20 +97,20 @@ export const AdminSettingsPage: React.FC = () => {
   const executeSave = async () => {
     setSaving(true);
     try {
-      await Promise.all([
-        updateSetting('site_name', siteName, siteNameEn),
-        updateSetting('site_tagline', tagline),
-        updateSetting('president_name', presidentName, presidentNameEn),
-        updateSetting('president_title', presidentTitle),
-        updateSetting('president_quote', presidentQuote),
-        updateSetting('official_email', email),
-        updateSetting('headquarters_city', city),
-        updateSetting('facebook_handle', facebook),
-        updateSetting('instagram_handle', instagram),
-        updateSetting('id_system_url', idUrl),
-        updateSetting('official_logo_url', logoUrl),
-        updateSetting('official_emblem_url', emblemUrl),
-      ]);
+      await updateSettingsBulk({
+        site_name: { value_ar: siteName, value_en: siteNameEn },
+        site_tagline: { value_ar: tagline },
+        president_name: { value_ar: presidentName, value_en: presidentNameEn },
+        president_title: { value_ar: presidentTitle },
+        president_quote: { value_ar: presidentQuote },
+        official_email: { value_ar: email },
+        headquarters_city: { value_ar: city },
+        facebook_handle: { value_ar: facebook },
+        instagram_handle: { value_ar: instagram },
+        id_system_url: { value_ar: idUrl },
+        official_logo_url: { value_ar: logoUrl },
+        official_emblem_url: { value_ar: emblemUrl },
+      });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 4000);
     } catch (e) {

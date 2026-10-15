@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Mail, 
   MapPin, 
@@ -9,10 +9,12 @@ import {
   Instagram, 
   ShieldCheck
 } from 'lucide-react';
-import { submitContactMessage } from '../../lib/db';
+import { submitContactMessage, getSettings } from '../../lib/db';
+import { SiteSetting } from '../../types';
 import { SEO } from '../../components/common/SEO';
 
 export const ContactPage: React.FC = () => {
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,6 +23,28 @@ export const ContactPage: React.FC = () => {
     message: '',
     honeypot: '',
   });
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const data = await getSettings();
+        setSettings(data);
+      } catch (e) {
+        console.error('Error loading settings in ContactPage:', e);
+      }
+    }
+    loadSettings();
+
+    const handleUpdate = () => {
+      loadSettings();
+    };
+    window.addEventListener('ifps_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('ifps_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -81,6 +105,19 @@ export const ContactPage: React.FC = () => {
     }
   };
 
+  const email = settings['official_email']?.value_ar || 'info@iraqifps.org';
+  const address = settings['headquarters_city']?.value_ar || 'العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق';
+  const logoUrl = settings['official_logo_url']?.value_ar || '/fps.png';
+  const siteName = settings['site_name']?.value_ar || 'جمعية أطباء الأسرة العراقية';
+
+  const rawFb = settings['facebook_handle']?.value_ar || 'iraqi.fps';
+  const fbUrl = rawFb.startsWith('http') ? rawFb : `https://facebook.com/${rawFb}`;
+  const fbLabel = rawFb.startsWith('http') ? (rawFb.includes('share') ? 'صفحة الفيسبوك' : rawFb.replace(/^https?:\/\/(www\.)?facebook\.com\/?/, '')) : rawFb;
+
+  const rawInsta = settings['instagram_handle']?.value_ar || 'iraqi.fps';
+  const instaUrl = rawInsta.startsWith('http') ? rawInsta : `https://instagram.com/${rawInsta}`;
+  const instaLabel = rawInsta.startsWith('http') ? rawInsta.replace(/^https?:\/\/(www\.)?instagram\.com\/?/, '') : rawInsta;
+
   return (
     <div className="py-10 sm:py-16 bg-slate-50 min-h-screen">
       <SEO 
@@ -112,14 +149,14 @@ export const ContactPage: React.FC = () => {
               <div className="flex items-center gap-3 pb-5 border-b border-navy-800">
                 <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0">
                   <img 
-                    src="/fps.png" 
-                    alt="IFPS" 
+                    src={logoUrl} 
+                    alt={siteName} 
                     className="w-full h-full object-contain"
                   />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-white">المقر العام للجمعية</h3>
-                  <span className="text-xs text-medical-300 font-medium">بغداد — جمهورية العراق</span>
+                  <span className="text-xs text-medical-300 font-medium">{address}</span>
                 </div>
               </div>
 
@@ -129,10 +166,10 @@ export const ContactPage: React.FC = () => {
                   <div>
                     <span className="block text-slate-400 text-xs mb-0.5">البريد الإلكتروني:</span>
                     <a 
-                      href="mailto:info@iraqifps.org" 
+                      href={`mailto:${email}`} 
                       className="font-bold text-white hover:text-medical-300 transition-colors font-sans"
                     >
-                      info@iraqifps.org
+                      {email}
                     </a>
                   </div>
                 </div>
@@ -141,7 +178,7 @@ export const ContactPage: React.FC = () => {
                   <MapPin className="w-4 h-4 text-medical-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="block text-slate-400 text-xs mb-0.5">العنوان:</span>
-                    <span className="text-slate-200">العراق - بغداد - مجمع النقابات - مجاور نقابة اطباء العراق</span>
+                    <span className="text-slate-200">{address}</span>
                   </div>
                 </div>
               </div>
@@ -150,23 +187,23 @@ export const ContactPage: React.FC = () => {
                 <span className="block text-xs text-slate-400 mb-2.5 font-medium">حسابات التواصل الاجتماعي:</span>
                 <div className="flex items-center gap-2.5">
                   <a
-                    href="https://facebook.com/iraqi.fps"
+                    href={fbUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
                   >
                     <Facebook className="w-4 h-4 text-medical-400" />
-                    <span>iraqi.fps</span>
+                    <span>{fbLabel}</span>
                   </a>
 
                   <a
-                    href="https://instagram.com/iraqi.fps"
+                    href={instaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-medical-600 text-slate-200 hover:text-white transition-colors text-xs font-semibold"
                   >
                     <Instagram className="w-4 h-4 text-medical-400" />
-                    <span>iraqi.fps</span>
+                    <span>{instaLabel}</span>
                   </a>
                 </div>
               </div>
