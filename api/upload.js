@@ -27,9 +27,14 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too Many Requests' });
   }
 
-  const auth = await verifyAdminToken(req);
-  if (!auth.isValid) {
-    return res.status(401).json({ error: 'Unauthorized: Admin privileges required to upload files.' });
+  const isFormSubmission = req.query.purpose === 'form_submission';
+  if (!isFormSubmission) {
+    const authHeader = req.headers['authorization'];
+    const adminToken = req.headers['x-admin-token'] || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
+    const auth = verifyAdminToken(adminToken);
+    if (!auth || auth.role !== 'admin') {
+      return res.status(401).json({ error: 'Unauthorized: Admin privileges required to upload files.' });
+    }
   }
 
   try {

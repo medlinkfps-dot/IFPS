@@ -6,7 +6,9 @@ import {
   NavigationItem, 
   ContactMessage, 
   AuditLog, 
-  PDFDocument 
+  PDFDocument,
+  CustomForm,
+  FormSubmission 
 } from '../types';
 import { 
   INITIAL_CONTENT_TYPES, 
@@ -34,6 +36,8 @@ export interface BlobStoreData {
   documents: PDFDocument[];
   messages: ContactMessage[];
   audit_logs: AuditLog[];
+  forms?: CustomForm[];
+  form_submissions?: FormSubmission[];
 }
 
 export function getDefaultStoreData(): BlobStoreData {
@@ -48,6 +52,8 @@ export function getDefaultStoreData(): BlobStoreData {
     documents: [...INITIAL_DOCUMENTS],
     messages: [],
     audit_logs: [],
+    forms: [],
+    form_submissions: [],
   };
 }
 

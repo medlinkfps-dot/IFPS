@@ -18,6 +18,7 @@ import { OpportunityDetailPage } from './pages/public/OpportunityDetailPage';
 import { DocumentsPage } from './pages/public/DocumentsPage';
 import { ContactPage } from './pages/public/ContactPage';
 import { DynamicSectionPage } from './pages/public/DynamicSectionPage';
+import { PublicFormPage } from './pages/public/PublicFormPage';
 import { NotFoundPage } from './pages/public/NotFoundPage';
 
 // Admin Pages
@@ -26,6 +27,9 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPostsPage } from './pages/admin/AdminPostsPage';
 import { AdminPostEditorPage } from './pages/admin/AdminPostEditorPage';
 import { AdminDocumentsPage } from './pages/admin/AdminDocumentsPage';
+import { AdminFormsPage } from './pages/admin/AdminFormsPage';
+import { AdminFormEditorPage } from './pages/admin/AdminFormEditorPage';
+import { AdminFormResponsesPage } from './pages/admin/AdminFormResponsesPage';
 import { AdminSectionsPage } from './pages/admin/AdminSectionsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminMediaPage } from './pages/admin/AdminMediaPage';
@@ -54,6 +58,7 @@ export function App() {
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/membership" element={<Navigate to="/documents" replace />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/forms/:slug" element={<PublicFormPage />} />
             <Route path="/section/:slug" element={<DynamicSectionPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
@@ -68,6 +73,10 @@ export function App() {
             <Route path="posts" element={<AdminPostsPage />} />
             <Route path="posts/new" element={<AdminPostEditorPage />} />
             <Route path="posts/edit/:id" element={<AdminPostEditorPage />} />
+            <Route path="forms" element={<AdminFormsPage />} />
+            <Route path="forms/new" element={<AdminFormEditorPage />} />
+            <Route path="forms/edit/:id" element={<AdminFormEditorPage />} />
+            <Route path="forms/:id/responses" element={<AdminFormResponsesPage />} />
             <Route path="documents" element={<AdminDocumentsPage />} />
             <Route path="sections" element={<AdminSectionsPage />} />
             <Route path="categories" element={<AdminCategoriesPage />} />

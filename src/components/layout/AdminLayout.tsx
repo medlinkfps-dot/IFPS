@@ -16,7 +16,8 @@ import {
   PlusCircle, 
   X, 
   Shield, 
-  UserCircle
+  UserCircle,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { LoadingSpinner } from '../common/LoadingSpinner';
@@ -47,6 +48,7 @@ export const AdminLayout: React.FC = () => {
   const navLinks = [
     { label_ar: 'لوحة التحكم', path: '/admin/dashboard', icon: LayoutDashboard },
     { label_ar: 'إدارة المنشورات', path: '/admin/posts', icon: FileText },
+    { label_ar: 'الاستمارات والاستبيانات', path: '/admin/forms', icon: ClipboardList },
     { label_ar: 'ملفات PDF والوثائق', path: '/admin/documents', icon: FileDown },
     { label_ar: 'الأقسام والمحتوى', path: '/admin/sections', icon: Layers },
     { label_ar: 'التصنيفات', path: '/admin/categories', icon: Tag },

@@ -13,7 +13,9 @@ import {
   NavigationItem, 
   ContactMessage, 
   AuditLog,
-  PDFDocument
+  PDFDocument,
+  CustomForm,
+  FormSubmission
 } from '../types';
 import { 
   INITIAL_CONTENT_TYPES, 
@@ -34,6 +36,8 @@ const STORAGE_KEYS = {
   MESSAGES: 'ifps_messages_store',
   AUDIT_LOGS: 'ifps_audit_logs_store',
   DOCUMENTS: 'ifps_documents_store',
+  FORMS: 'ifps_forms_store',
+  FORM_SUBMISSIONS: 'ifps_form_submissions_store',
 };
 
 // Helper to append audit logs atomically to store before cloud save
@@ -1026,4 +1030,199 @@ export async function incrementDocumentDownload(id: string): Promise<void> {
     const updated = docs.map(d => d.id === id ? { ...d, downloads_count: newCount } : d);
     setStoredData(STORAGE_KEYS.DOCUMENTS, updated);
   }
+}
+
+// ------------------------------------------------------------------------------
+// Custom Forms & Submissions (الاستمارات والاستبيانات - DTform)
+// ------------------------------------------------------------------------------
+
+export async function getForms(): Promise<CustomForm[]> {
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    return Array.isArray(store.forms) ? store.forms : [];
+  }
+  return getStoredData<CustomForm[]>(STORAGE_KEYS.FORMS, []);
+}
+
+export async function getFormById(id: string): Promise<CustomForm | null> {
+  const forms = await getForms();
+  return forms.find(f => f.id === id) || null;
+}
+
+export async function getFormBySlug(slug: string): Promise<CustomForm | null> {
+  const forms = await getForms();
+  return forms.find(f => f.slug === slug) || null;
+}
+
+export async function createForm(formData: Omit<CustomForm, 'id' | 'created_at' | 'updated_at'>): Promise<CustomForm> {
+  const newForm: CustomForm = {
+    ...formData,
+    id: `form-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    submission_count: 0,
+    view_count: 0,
+  };
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (!Array.isArray(store.forms)) store.forms = [];
+    store.forms.unshift(newForm);
+    appendAuditLog(store, 'CREATE', 'form', newForm.id, { title: newForm.title });
+    await saveBlobStore(store);
+    broadcastContentUpdate('forms');
+    return newForm;
+  }
+
+  const forms = await getForms();
+  forms.unshift(newForm);
+  setStoredData(STORAGE_KEYS.FORMS, forms);
+  await logAdminAction('CREATE', 'form', newForm.id, { title: newForm.title });
+  broadcastContentUpdate('forms');
+  return newForm;
+}
+
+export async function updateForm(id: string, updates: Partial<CustomForm>): Promise<CustomForm> {
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (!Array.isArray(store.forms)) store.forms = [];
+    const index = store.forms.findIndex(f => f.id === id);
+    if (index !== -1) {
+      store.forms[index] = { 
+        ...store.forms[index], 
+        ...updates, 
+        updated_at: new Date().toISOString() 
+      };
+      appendAuditLog(store, 'UPDATE', 'form', id, updates);
+      await saveBlobStore(store);
+      broadcastContentUpdate('forms');
+      return store.forms[index];
+    }
+  }
+
+  const forms = await getForms();
+  const index = forms.findIndex(f => f.id === id);
+  if (index !== -1) {
+    forms[index] = { 
+      ...forms[index], 
+      ...updates, 
+      updated_at: new Date().toISOString() 
+    };
+    setStoredData(STORAGE_KEYS.FORMS, forms);
+    await logAdminAction('UPDATE', 'form', id, updates);
+    broadcastContentUpdate('forms');
+    return forms[index];
+  }
+  throw new Error('Form not found');
+}
+
+export async function deleteForm(id: string): Promise<void> {
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (Array.isArray(store.forms)) {
+      const target = store.forms.find(f => f.id === id);
+      store.forms = store.forms.filter(f => f.id !== id);
+      if (Array.isArray(store.form_submissions)) {
+        store.form_submissions = store.form_submissions.filter(s => s.form_id !== id);
+      }
+      appendAuditLog(store, 'DELETE', 'form', id, { title: target?.title });
+      await saveBlobStore(store);
+      broadcastContentUpdate('forms');
+      return;
+    }
+  }
+
+  const forms = await getForms();
+  const target = forms.find(f => f.id === id);
+  const filtered = forms.filter(f => f.id !== id);
+  setStoredData(STORAGE_KEYS.FORMS, filtered);
+  await logAdminAction('DELETE', 'form', id, { title: target?.title });
+  broadcastContentUpdate('forms');
+}
+
+export async function getFormSubmissions(formId?: string): Promise<FormSubmission[]> {
+  let submissions: FormSubmission[] = [];
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    submissions = Array.isArray(store.form_submissions) ? store.form_submissions : [];
+  } else {
+    submissions = getStoredData<FormSubmission[]>(STORAGE_KEYS.FORM_SUBMISSIONS, []);
+  }
+
+  if (formId) {
+    return submissions.filter(s => s.form_id === formId);
+  }
+  return submissions;
+}
+
+export async function deleteFormSubmission(id: string): Promise<void> {
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (Array.isArray(store.form_submissions)) {
+      const sub = store.form_submissions.find(s => s.id === id);
+      store.form_submissions = store.form_submissions.filter(s => s.id !== id);
+      if (sub && Array.isArray(store.forms)) {
+        const form = store.forms.find(f => f.id === sub.form_id);
+        if (form && typeof form.submission_count === 'number' && form.submission_count > 0) {
+          form.submission_count -= 1;
+        }
+      }
+      await saveBlobStore(store);
+      broadcastContentUpdate('form_submissions');
+      return;
+    }
+  }
+
+  const submissions = await getFormSubmissions();
+  const filtered = submissions.filter(s => s.id !== id);
+  setStoredData(STORAGE_KEYS.FORM_SUBMISSIONS, filtered);
+  broadcastContentUpdate('form_submissions');
+}
+
+export async function submitFormResponse(formId: string, formSlug: string, answers: Record<string, any>): Promise<FormSubmission> {
+  // First attempt submitting via /api/submit-form endpoint
+  try {
+    const res = await fetch('/api/submit-form', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ form_id: formId, form_slug: formSlug, answers }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      broadcastContentUpdate('form_submissions');
+      return data.submission;
+    }
+  } catch (e) {
+    console.warn('API submission failed, attempting direct store fallback:', e);
+  }
+
+  // Fallback for offline / direct store
+  const newSubmission: FormSubmission = {
+    id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+    form_id: formId,
+    form_slug: formSlug,
+    answers,
+    submitted_at: new Date().toISOString(),
+  };
+
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    if (!Array.isArray(store.form_submissions)) store.form_submissions = [];
+    store.form_submissions.unshift(newSubmission);
+    if (Array.isArray(store.forms)) {
+      const form = store.forms.find(f => f.id === formId);
+      if (form) {
+        form.submission_count = (form.submission_count || 0) + 1;
+      }
+    }
+    await saveBlobStore(store);
+    broadcastContentUpdate('form_submissions');
+    return newSubmission;
+  }
+
+  const subs = await getFormSubmissions();
+  subs.unshift(newSubmission);
+  setStoredData(STORAGE_KEYS.FORM_SUBMISSIONS, subs);
+  broadcastContentUpdate('form_submissions');
+  return newSubmission;
 }

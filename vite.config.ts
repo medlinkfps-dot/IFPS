@@ -9,10 +9,36 @@ function apiDevMiddleware(): Plugin {
         if (req.url && req.url.startsWith('/api/')) {
           const urlPath = req.url.split('?')[0];
           let handlerModule: any = null;
+
+          if (urlPath === '/api/upload') {
+            handlerModule = await import('./api/upload.js');
+            const mockRes: any = {
+              setHeader(k: string, v: string) { res.setHeader(k, v); },
+              status(code: number) { res.statusCode = code; return this; },
+              json(data: any) {
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(data));
+                return this;
+              },
+              end(data?: any) { res.end(data); return this; },
+            };
+            try {
+              const parsedUrl = new URL(req.url, 'http://localhost:5173');
+              (req as any).query = Object.fromEntries(parsedUrl.searchParams.entries());
+              await handlerModule.default(req, mockRes);
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+            return;
+          }
+
           if (urlPath === '/api/store') {
             handlerModule = await import('./api/store.js');
           } else if (urlPath === '/api/auth') {
             handlerModule = await import('./api/auth.js');
+          } else if (urlPath === '/api/submit-form') {
+            handlerModule = await import('./api/submit-form.js');
           }
 
           if (handlerModule && handlerModule.default) {

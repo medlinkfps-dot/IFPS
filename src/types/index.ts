@@ -142,7 +142,7 @@ export interface AuditLog {
   admin_id?: string;
   admin_email: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'PUBLISH' | 'ARCHIVE' | 'LOGIN' | 'SETTINGS_UPDATE';
-  entity_type: 'post' | 'setting' | 'category' | 'user' | 'section' | 'media' | 'message' | 'document';
+  entity_type: 'post' | 'setting' | 'category' | 'user' | 'section' | 'media' | 'message' | 'document' | 'form';
   entity_id?: string;
   details?: any;
   ip_address?: string;
@@ -175,5 +175,61 @@ export interface PDFDocument {
   sort_order?: number;
   is_active: boolean;
   created_at: string;
+}
+
+export type FormFieldType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'email' 
+  | 'phone' 
+  | 'radio' 
+  | 'checkbox' 
+  | 'select' 
+  | 'file';
+
+export interface FormField {
+  id: string;
+  label: string;
+  type: FormFieldType;
+  placeholder?: string;
+  helpText?: string;
+  required: boolean;
+  options?: string[];
+  allowedFileTypes?: string[];
+  maxFileSizeMB?: number;
+}
+
+export interface CustomForm {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  fields: FormField[];
+  status: 'open' | 'closed';
+  deadline?: string;
+  submit_button_text?: string;
+  success_message?: string;
+  allow_multiple_submissions?: boolean;
+  view_count?: number;
+  submission_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormSubmissionFile {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
+export interface FormSubmission {
+  id: string;
+  form_id: string;
+  form_slug: string;
+  answers: Record<string, any>;
+  ip_address?: string;
+  submitted_at: string;
 }
 
