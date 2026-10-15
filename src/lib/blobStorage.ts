@@ -23,7 +23,16 @@ import { getAdminToken } from './auth';
 // Cloud store is active via same-origin Serverless API (/api/store)
 export const isBlobConfigured = true;
 
-const LOCAL_STORAGE_BACKUP_KEY = 'ifps_blob_cache_store';
+const CURRENT_STORE_VERSION = 2;
+const LOCAL_STORAGE_BACKUP_KEY = 'ifps_blob_cache_store_v2';
+
+// Clean legacy caches to prevent stale data from flashing
+try {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('ifps_blob_cache_store');
+    localStorage.removeItem('ifps_settings_store');
+  }
+} catch {}
 
 export interface BlobStoreData {
   version: number;
@@ -42,8 +51,8 @@ export interface BlobStoreData {
 
 export function getDefaultStoreData(): BlobStoreData {
   return {
-    version: 1,
-    last_updated: '1970-01-01T00:00:00.000Z',
+    version: CURRENT_STORE_VERSION,
+    last_updated: new Date().toISOString(),
     posts: [...INITIAL_POSTS],
     settings: { ...INITIAL_SETTINGS },
     content_types: [...INITIAL_CONTENT_TYPES],
@@ -69,7 +78,7 @@ function getLocalCache(): BlobStoreData {
     const cached = localStorage.getItem(LOCAL_STORAGE_BACKUP_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (parsed && Array.isArray(parsed.posts) && parsed.settings) {
+      if (parsed && Array.isArray(parsed.posts) && parsed.settings && parsed.version === CURRENT_STORE_VERSION) {
         inMemoryStore = parsed;
         return parsed;
       }
@@ -80,6 +89,13 @@ function getLocalCache(): BlobStoreData {
   const defaultData = getDefaultStoreData();
   inMemoryStore = defaultData;
   return defaultData;
+}
+
+export function getInitialSettingsSnapshot(): Record<string, SiteSetting> {
+  const store = getLocalCache();
+  return store?.settings && Object.keys(store.settings).length > 0
+    ? store.settings
+    : INITIAL_SETTINGS;
 }
 
 function setLocalCache(data: BlobStoreData) {
@@ -146,6 +162,7 @@ export async function getBlobStore(forceFresh = false): Promise<BlobStoreData> {
 let backgroundSyncTimer: any = null;
 function scheduleBackgroundSync() {
   if (backgroundSyncTimer) return;
+  // Sync periodically without interrupting the user immediately on page load
   backgroundSyncTimer = setTimeout(async () => {
     backgroundSyncTimer = null;
     // Don't run background sync if admin recently saved
@@ -162,10 +179,11 @@ function scheduleBackgroundSync() {
           const cloudTime = new Date(cloudData.last_updated || 0).getTime();
           const localTime = inMemoryStore ? new Date(inMemoryStore.last_updated || 0).getTime() : 0;
           
-          // CRITICAL: Only overwrite local store if cloud is STRICTLY NEWER
+          // CRITICAL: Only overwrite local store and notify if cloud is strictly newer and different
           if (cloudTime > localTime) {
+            const hasChanged = JSON.stringify(cloudData.settings) !== JSON.stringify(inMemoryStore?.settings);
             setLocalCache(cloudData);
-            if (typeof window !== 'undefined') {
+            if (hasChanged && typeof window !== 'undefined') {
               window.dispatchEvent(
                 new CustomEvent('ifps_content_updated', { detail: { source: 'cloud_sync' } })
               );
@@ -176,7 +194,7 @@ function scheduleBackgroundSync() {
     } catch {
       // Quiet background failure
     }
-  }, 1000);
+  }, 30000);
 }
 
 /**

@@ -9,12 +9,12 @@ import {
   Instagram, 
   ShieldCheck
 } from 'lucide-react';
-import { submitContactMessage, getSettings } from '../../lib/db';
+import { submitContactMessage, getSettings, getInitialSettingsSnapshot } from '../../lib/db';
 import { SiteSetting } from '../../types';
 import { SEO } from '../../components/common/SEO';
 
 export const ContactPage: React.FC = () => {
-  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>(() => getInitialSettingsSnapshot());
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',

@@ -11,12 +11,12 @@ import {
   Award,
   FileDown
 } from 'lucide-react';
-import { getSettings } from '../../lib/db';
+import { getSettings, getInitialSettingsSnapshot } from '../../lib/db';
 import { SiteSetting } from '../../types';
 
 export const Footer: React.FC = () => {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>(() => getInitialSettingsSnapshot());
 
   useEffect(() => {
     async function loadSettings() {

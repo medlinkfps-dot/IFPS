@@ -10,11 +10,11 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
-import { getSettings } from '../../lib/db';
+import { getSettings, getInitialSettingsSnapshot } from '../../lib/db';
 import { SiteSetting } from '../../types';
 
 export const AboutPage: React.FC = () => {
-  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>(() => getInitialSettingsSnapshot());
 
   useEffect(() => {
     async function loadData() {

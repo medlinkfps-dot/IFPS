@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   Stethoscope
 } from 'lucide-react';
-import { getPosts, getSettings } from '../../lib/db';
+import { getPosts, getSettings, getInitialSettingsSnapshot } from '../../lib/db';
 import { Post, SiteSetting } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { Badge } from '../../components/common/Badge';
@@ -27,7 +27,7 @@ export const HomePage: React.FC = () => {
   const [news, setNews] = useState<Post[]>([]);
   const [courses, setCourses] = useState<Post[]>([]);
   const [events, setEvents] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>(() => getInitialSettingsSnapshot());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

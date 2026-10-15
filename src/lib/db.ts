@@ -3,8 +3,11 @@ import {
   getBlobStore, 
   saveBlobStore, 
   isBlobConfigured,
-  BlobStoreData 
+  BlobStoreData,
+  getInitialSettingsSnapshot 
 } from './blobStorage';
+
+export { getInitialSettingsSnapshot };
 import { 
   Post, 
   ContentType, 

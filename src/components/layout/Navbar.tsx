@@ -16,7 +16,7 @@ import {
   PhoneCall,
   Info
 } from 'lucide-react';
-import { getNavigationItems, getSettings } from '../../lib/db';
+import { getNavigationItems, getSettings, getInitialSettingsSnapshot } from '../../lib/db';
 import { INITIAL_NAVIGATION } from '../../lib/mockData';
 import { NavigationItem, SiteSetting } from '../../types';
 import { useAuth } from '../../lib/auth';
@@ -37,7 +37,7 @@ export const Navbar: React.FC = () => {
   const [navItems, setNavItems] = useState<NavigationItem[]>(() =>
     INITIAL_NAVIGATION.filter((item) => item.is_active && item.path !== '/opportunities')
   );
-  const [settings, setSettings] = useState<Record<string, SiteSetting>>({});
+  const [settings, setSettings] = useState<Record<string, SiteSetting>>(() => getInitialSettingsSnapshot());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
