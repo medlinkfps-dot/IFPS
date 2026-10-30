@@ -8,6 +8,7 @@ import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { AttachedFormCard } from '../../components/common/AttachedFormCard';
+import { CustomPostButton } from '../../components/common/CustomPostButton';
 
 export const OpportunityDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -130,6 +131,12 @@ export const OpportunityDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={opp.content_ar} />
           </div>
+
+          {/* Custom CTA Action Button / External Link */}
+          <CustomPostButton 
+            text={opp.metadata?.custom_button_text} 
+            url={opp.metadata?.custom_button_url} 
+          />
 
           {/* Attached Survey / Form (DTform) */}
           <AttachedFormCard 

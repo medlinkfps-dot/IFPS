@@ -3,6 +3,7 @@ import { Monitor, Smartphone, X, Calendar, User, Eye } from 'lucide-react';
 import { Post } from '../../types';
 import { RichTextRenderer } from '../common/RichTextRenderer';
 import { Badge } from '../common/Badge';
+import { CustomPostButton } from '../common/CustomPostButton';
 
 interface PostPreviewModalProps {
   isOpen: boolean;
@@ -119,6 +120,12 @@ export const PostPreviewModal: React.FC<PostPreviewModalProps> = ({
             <div className="border-t border-slate-100 pt-6">
               <RichTextRenderer content={post.content_ar || '<p>لا يوجد محتوى مكتوب بعد.</p>'} />
             </div>
+
+            {/* Custom CTA Action Button */}
+            <CustomPostButton
+              text={post.metadata?.custom_button_text}
+              url={post.metadata?.custom_button_url}
+            />
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { getDerivedRegistrationStatus } from '../../lib/statusUtils';
 import { AttachedFormCard } from '../../components/common/AttachedFormCard';
+import { CustomPostButton } from '../../components/common/CustomPostButton';
 
 export const CourseDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -208,6 +209,12 @@ export const CourseDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={course.content_ar} />
           </div>
+
+          {/* Custom CTA Action Button / External Link */}
+          <CustomPostButton 
+            text={course.metadata?.custom_button_text} 
+            url={course.metadata?.custom_button_url} 
+          />
 
           {/* Attached Survey / Form (DTform) */}
           <AttachedFormCard 

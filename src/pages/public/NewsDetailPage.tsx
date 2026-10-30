@@ -19,6 +19,7 @@ import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { AttachedFormCard } from '../../components/common/AttachedFormCard';
+import { CustomPostButton } from '../../components/common/CustomPostButton';
 
 export const NewsDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -236,6 +237,12 @@ export const NewsDetailPage: React.FC = () => {
           <div className="py-4">
             <RichTextRenderer content={post.content_ar} />
           </div>
+
+          {/* Custom CTA Action Button / External Link */}
+          <CustomPostButton 
+            text={post.metadata?.custom_button_text} 
+            url={post.metadata?.custom_button_url} 
+          />
 
           {/* Attached Survey / Form (DTform) */}
           <AttachedFormCard 

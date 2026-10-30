@@ -72,6 +72,10 @@ export interface PostMetadata {
   attached_form_id?: string;
   attached_form_slug?: string;
 
+  // Custom Action Button / External Link
+  custom_button_text?: string;
+  custom_button_url?: string;
+
   additional_sections?: string[]; // IDs or Slugs of other sections to appear in
   [key: string]: any;
 }

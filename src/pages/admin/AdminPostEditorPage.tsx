@@ -66,6 +66,10 @@ export const AdminPostEditorPage: React.FC = () => {
   const [availableForms, setAvailableForms] = useState<CustomForm[]>([]);
   const [attachedFormId, setAttachedFormId] = useState('');
 
+  // Custom Action Button / External Link
+  const [customButtonText, setCustomButtonText] = useState('');
+  const [customButtonUrl, setCustomButtonUrl] = useState('');
+
   // Metadata State
   const [metadata, setMetadata] = useState<Record<string, any>>({});
 
@@ -106,6 +110,8 @@ export const AdminPostEditorPage: React.FC = () => {
             setRegistrationStatus(post.metadata?.registration_status || '');
             setRegistrationDeadline(post.metadata?.registration_deadline || '');
             setAttachedFormId(post.metadata?.attached_form_id || '');
+            setCustomButtonText(post.metadata?.custom_button_text || '');
+            setCustomButtonUrl(post.metadata?.custom_button_url || '');
           }
         } else if (types.length > 0) {
           setContentTypeId(types[0].id);
@@ -217,7 +223,9 @@ export const AdminPostEditorPage: React.FC = () => {
         registration_status: registrationStatus, 
         registration_deadline: registrationDeadline,
         attached_form_id: attachedFormId || undefined,
-        attached_form_slug: availableForms.find(f => f.id === attachedFormId)?.slug || undefined
+        attached_form_slug: availableForms.find(f => f.id === attachedFormId)?.slug || undefined,
+        custom_button_text: customButtonText.trim() || undefined,
+        custom_button_url: customButtonUrl.trim() || undefined,
       },
       seo_title: seoTitle.trim() || titleAr.trim(),
       seo_description: seoDescription.trim() || summaryAr.trim(),
@@ -618,6 +626,59 @@ export const AdminPostEditorPage: React.FC = () => {
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl"
               />
             </div>
+          </div>
+
+          {/* Custom CTA Action Button / External Link */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-navy-900 flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-medical-600" />
+                <span>زر تفاعلي مخصص ورابط خارجي (اختياري)</span>
+              </h3>
+              <span className="text-[11px] text-slate-400">إضافة زر مميز داخل المنشور يفتح رابطاً محدداً عند النقر عليه</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  تسمية الزر (النص الظاهر على الزر)
+                </label>
+                <input
+                  type="text"
+                  value={customButtonText}
+                  onChange={(e) => setCustomButtonText(e.target.value)}
+                  placeholder="مثال: التسجيل في المؤتمر، تحميل الملف، رابط البث..."
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-medical-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  رابط الزر (URL)
+                </label>
+                <input
+                  type="url"
+                  value={customButtonUrl}
+                  onChange={(e) => setCustomButtonUrl(e.target.value)}
+                  placeholder="https://example.com/register أو رابط مباشر"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-medical-500 font-sans"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            {customButtonText && customButtonUrl && (
+              <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-slate-600 truncate">
+                  <span className="font-semibold text-slate-700">معاينة الزر:</span>
+                  <span className="truncate text-slate-500 dir-ltr">{customButtonUrl}</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-medical-600 to-teal-600 text-white font-bold rounded-lg text-xs shadow-xs">
+                  <span>{customButtonText}</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1052,6 +1113,11 @@ export const AdminPostEditorPage: React.FC = () => {
           content_type_name_ar: contentTypes.find(t => t.id === contentTypeId)?.name_ar,
           is_pinned: isPinned,
           author_name: 'إدارة جمعية أطباء الأسرة العراقية',
+          metadata: {
+            ...metadata,
+            custom_button_text: customButtonText,
+            custom_button_url: customButtonUrl,
+          }
         }}
       />
 
