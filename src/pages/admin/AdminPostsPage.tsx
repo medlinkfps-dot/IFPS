@@ -343,10 +343,15 @@ export const AdminPostsPage: React.FC = () => {
                     <td className="py-4 pl-6 text-left">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
-                          to={`/news/${post.slug}`}
+                          to={
+                            post.content_type_slug === 'events' ? `/events/${post.slug}` :
+                            post.content_type_slug === 'courses' ? `/courses/${post.slug}` :
+                            post.content_type_slug === 'opportunities' ? `/opportunities/${post.slug}` :
+                            `/news/${post.slug}`
+                          }
                           target="_blank"
                           className="p-1.5 text-slate-400 hover:text-navy-900 rounded-lg hover:bg-slate-100"
-                          title="معاينة الرابط المباشر"
+                          title="معاينة الرابط المباشر على الموقع"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Link>

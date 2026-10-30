@@ -21,6 +21,7 @@ import {
   updatePDFDocument, 
   deletePDFDocument 
 } from '../../lib/db';
+import { uploadFile } from '../../lib/fileUtils';
 import { PDFDocument } from '../../types';
 import { SEO } from '../../components/common/SEO';
 import { Modal } from '../../components/common/Modal';
@@ -110,7 +111,7 @@ export const AdminDocumentsPage: React.FC = () => {
   };
 
   // Handle local PDF upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -130,7 +131,17 @@ export const AdminDocumentsPage: React.FC = () => {
       setTitle(suggestedTitle);
     }
 
-    // Convert file to object URL or base64 data URL for offline/local resilience
+    try {
+      const uploaded = await uploadFile(file);
+      if (uploaded && uploaded.url) {
+        setFileUrl(uploaded.url);
+        return;
+      }
+    } catch (err) {
+      console.warn('PDF upload error, using local fallback:', err);
+    }
+
+    // Fallback if upload fails
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {

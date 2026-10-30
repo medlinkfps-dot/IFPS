@@ -153,6 +153,46 @@ export const AdminPostEditorPage: React.FC = () => {
     setSaving(true);
     setStatusMessage(null);
 
+    // If featuredImage is base64, ensure it is uploaded as a clean URL
+    let cleanFeaturedImage = featuredImage.trim();
+    if (cleanFeaturedImage.startsWith('data:image/')) {
+      try {
+        const res = await fetch(cleanFeaturedImage);
+        const blob = await res.blob();
+        const ext = blob.type.split('/')[1] || 'jpg';
+        const file = new File([blob], `image-${Date.now()}.${ext}`, { type: blob.type });
+        const { uploadImageFile } = await import('../../lib/imageUtils');
+        const uploaded = await uploadImageFile(file);
+        if (uploaded.url) {
+          cleanFeaturedImage = uploaded.url;
+          setFeaturedImage(uploaded.url);
+        }
+      } catch (e) {
+        console.warn('Failed to upload base64 featured image:', e);
+      }
+    }
+
+    // Clean any base64 gallery images
+    let cleanGalleryImages = [...galleryImages];
+    for (let i = 0; i < cleanGalleryImages.length; i++) {
+      if (cleanGalleryImages[i]?.startsWith('data:image/')) {
+        try {
+          const res = await fetch(cleanGalleryImages[i]);
+          const blob = await res.blob();
+          const ext = blob.type.split('/')[1] || 'jpg';
+          const file = new File([blob], `gallery-${Date.now()}-${i}.${ext}`, { type: blob.type });
+          const { uploadImageFile } = await import('../../lib/imageUtils');
+          const uploaded = await uploadImageFile(file);
+          if (uploaded.url) {
+            cleanGalleryImages[i] = uploaded.url;
+          }
+        } catch (e) {
+          console.warn('Failed to upload base64 gallery image:', e);
+        }
+      }
+    }
+    setGalleryImages(cleanGalleryImages);
+
     const postPayload: Partial<Post> = {
       content_type_id: contentTypeId,
       title_ar: titleAr.trim(),
@@ -160,7 +200,7 @@ export const AdminPostEditorPage: React.FC = () => {
       slug: slug.trim() || `post-${Date.now()}`,
       summary_ar: summaryAr.trim() || titleAr.trim().slice(0, 150),
       content_ar: contentAr,
-      featured_image: featuredImage.trim() || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
+      featured_image: cleanFeaturedImage || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
       status: targetStatus,
       is_pinned: isPinned,
       is_featured: isFeatured,
@@ -170,7 +210,7 @@ export const AdminPostEditorPage: React.FC = () => {
       published_at: customPublishDate ? new Date(customPublishDate).toISOString() : undefined,
       metadata: { 
         ...metadata, 
-        gallery_images: galleryImages, 
+        gallery_images: cleanGalleryImages, 
         slider_interval: sliderInterval, 
         additional_sections: additionalSections, 
         categories: selectedCategories, 
@@ -204,7 +244,10 @@ export const AdminPostEditorPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error saving post:', err);
-      setStatusMessage({ type: 'error', text: 'حدث خطأ أثناء تطبيق التعديلات.' });
+      setStatusMessage({ 
+        type: 'error', 
+        text: err?.message ? `حدث خطأ أثناء تطبيق التعديلات: ${err.message}` : 'حدث خطأ أثناء تطبيق التعديلات.' 
+      });
     } finally {
       setSaving(false);
     }

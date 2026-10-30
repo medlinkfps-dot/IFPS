@@ -424,6 +424,20 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
   const types = await getContentTypes();
   const selectedType = types.find(t => t.id === postData.content_type_id) || types[0];
 
+  let currentPosts: Post[] = [];
+  if (isBlobConfigured) {
+    const store = await getBlobStore();
+    currentPosts = store.posts || [];
+  } else {
+    currentPosts = getStoredData<Post[]>(STORAGE_KEYS.POSTS, INITIAL_POSTS);
+  }
+
+  // Calculate highest sort_order so new post ranks at the top by default
+  const maxSort = currentPosts.reduce((max, p) => Math.max(max, p.sort_order || 0), 0);
+  const calculatedSortOrder = (postData.sort_order && postData.sort_order > 0) 
+    ? postData.sort_order 
+    : maxSort + 1;
+
   const newPost: Post = {
     id: `post-${Date.now()}`,
     content_type_id: selectedType.id,
@@ -440,7 +454,9 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
     status: postData.status || 'draft',
     is_pinned: postData.is_pinned || false,
     is_featured: postData.is_featured || false,
-    published_at: postData.status === 'published' ? new Date().toISOString() : postData.published_at,
+    author_name: postData.author_name || 'الإعلام والتواصل الرقمي',
+    sort_order: calculatedSortOrder,
+    published_at: postData.status === 'published' ? (postData.published_at || new Date().toISOString()) : postData.published_at,
     scheduled_for: postData.scheduled_for,
     metadata: postData.metadata || {},
     seo_title: postData.seo_title || postData.title_ar,

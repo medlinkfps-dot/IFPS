@@ -47,6 +47,7 @@ export async function uploadFile(file: File, bucket = 'documents'): Promise<Proc
       method: 'POST',
       headers: {
         'x-admin-token': token || '',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         'Content-Type': file.type,
       },
       body: file, // Raw file

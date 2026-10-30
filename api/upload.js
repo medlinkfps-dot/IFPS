@@ -41,14 +41,25 @@ export default async function handler(req, res) {
     const filename = req.query.filename || `upload-${Date.now()}`;
     const contentType = req.headers['content-type'] || 'application/octet-stream';
     
+    const token = 
+      process.env.BLOB_READ_WRITE_TOKEN || 
+      'vercel_blob_rw_A53IpJjUTe4iXwXY_DtqKr9S6wORYyr3M0gPMm78SJ26WTE';
+
     // Read the stream and upload
     const blob = await put(filename, req, {
-      access: 'public', // Images and PDFs should be public
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      access: 'private', // The store is private, so private access is required
+      token,
       contentType: contentType,
+      addRandomSuffix: true,
     });
 
-    return res.status(200).json(blob);
+    const mediaUrl = `/api/media?pathname=${encodeURIComponent(blob.pathname)}`;
+
+    return res.status(200).json({
+      ...blob,
+      url: mediaUrl,
+      mediaUrl,
+    });
   } catch (error) {
     console.error('Upload Error:', error);
     return res.status(500).json({ error: error.message });

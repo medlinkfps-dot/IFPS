@@ -126,6 +126,7 @@ export async function uploadImageFile(file: File, bucket = 'media'): Promise<Pro
       method: 'POST',
       headers: {
         'x-admin-token': token || '',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         'Content-Type': file.type,
       },
       body: optimizedFile,

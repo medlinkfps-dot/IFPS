@@ -201,7 +201,7 @@ function scheduleBackgroundSync() {
  * Pushes full store payload to cloud via /api/store.
  * Authenticates using cryptographically signed admin token.
  */
-async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
+async function pushBlobStoreToCloud(data: BlobStoreData): Promise<{ success: boolean; error?: string }> {
   try {
     const adminToken = getAdminToken();
     const headers: Record<string, string> = {
@@ -217,7 +217,7 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
-    }).catch(() => null);
+    }).catch((err) => ({ ok: false, status: 0, text: async () => err.message } as any));
 
     if (apiRes && apiRes.ok) {
       const resJson = await apiRes.json();
@@ -225,17 +225,26 @@ async function pushBlobStoreToCloud(data: BlobStoreData): Promise<boolean> {
         data.last_updated = resJson.last_updated;
         setLocalCache(data);
       }
-      return true;
+      return { success: true };
     }
 
-    if (apiRes && apiRes.status === 401) {
-      console.error('Unauthorized: Admin session expired or missing token.');
-    }
+    let errorDetail = '';
+    try {
+      const resText = await apiRes.text();
+      try {
+        const parsed = JSON.parse(resText);
+        errorDetail = parsed.error || resText;
+      } catch {
+        errorDetail = resText;
+      }
+    } catch {}
 
-    return false;
-  } catch (err) {
+    const fullErrMsg = errorDetail || `HTTP ${apiRes.status}`;
+    console.error('Failed to write to store API:', fullErrMsg);
+    return { success: false, error: fullErrMsg };
+  } catch (err: any) {
     console.error('Failed to write to store API:', err);
-    return false;
+    return { success: false, error: err.message };
   }
 }
 
@@ -260,10 +269,9 @@ export async function saveBlobStore(data: BlobStoreData): Promise<boolean> {
   }
 
   // Push to Serverless API
-  const saved = await pushBlobStoreToCloud(data);
-  if (!saved) {
-    console.warn('Notice: Cloud save did not complete or requires admin authentication.');
-    return false;
+  const res = await pushBlobStoreToCloud(data);
+  if (!res.success) {
+    throw new Error(res.error || 'فشل حفظ وتطبيق التعديلات على السحابة، يرجى التأكد من تسجيل الدخول والاتصال بالإنترنت.');
   }
   return true;
 }
